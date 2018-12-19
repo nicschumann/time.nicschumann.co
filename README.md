@@ -6,7 +6,7 @@
 
 ## What is this?
 
-This is a tool for visualizing time tracking information from project management and time tracking applications. My goal is simply to visualize the information I've collected from 11/15/2017 to 12/15/2018 in [Paymo](http://paymo.com). This document outlines the visualization and interface units I'd like to build, and their current states.
+This is a tool for visualizing time tracking information from project management and time tracking applications. My goal is simply to visualize the information I've collected from 11/15/2017 to 12/15/2018 in [Paymo](https://github.com/paymoapp/api). This document outlines the visualization and interface units I'd like to build, and their current states.
 
 ## Captured Data
 
@@ -63,7 +63,7 @@ The `Average over Time` module provides statistical summaries that condense the 
 
 ### Running Average
 
-The `Running Average` module provides a way to visualize a sequence of windowed averages over time. Basically, it provides a way of viewing how the average shifts in time, as a fixed-size window is slid across all of the time entries. For example, we might take the window to be 5 days wide, and look at two months of time, sliding the window forward in 1 day increments. We'd get two months worth of averages, each averaging over a 5 day window around the day in question. This shows us how average experience changes over time, or over criteria.
+The `Running Average` module provides a way to visualize a sequence of windowed averages over time. Basically, it provides a way of viewing how the average shifts in time, as a fixed-size window is slid across all of the time entries. For example, we might take the window to be 5 days wide, and look at two months of time, sliding the window forward in 1 day increments. We'd get two months worth of averages, each averaging over a 5 day window around the day in question. This shows us how average experience changes over time, or over
 
 |state        |completed
 |---          |---
