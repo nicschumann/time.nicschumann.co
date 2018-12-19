@@ -68,6 +68,15 @@ function entries_selector( user_ids, from, to ) {
 }
 
 /**
+ * This helper generates a special selector for grabbing the set of projects
+ * associated with a given user.
+ */
+function projects_selector( user_ids ) {
+    var includes = "";
+    return "where=user_id in (" + user_ids.join( "," ) + ")" + includes;
+}
+
+/**
  * Given a set of users, a start time, and an end time,
  * return a list of time entries from that time period,
  * which is given by a moment time stamp.
@@ -86,6 +95,33 @@ Paymo.prototype.entrySegment = function( sponsor, users, start, end, callback ) 
                 var query = entries_selector( users, start, end );
 
                 self    .get( sponsor, 'entries', query )
+                        .then( function( d ) { callback( null, d ); })
+                        .catch( callback );
+
+
+            })
+            .catch( callback );
+
+};
+
+/**
+ * Get the set of projects that a group of users is assigned to.
+ *
+ */
+Paymo.prototype.projects = function( sponsor, users, callback ) {
+
+    var self = this;
+
+    self    .get( sponsor, 'users' )
+            .then( function( d ) {
+
+                users = d.users
+                    .filter( function( user ) { return users.indexOf( user.name ) !== -1; })
+                    .map( function( user ) { return user.id; } );
+
+                var query = projects_selector( users );
+
+                self    .get( sponsor, 'projects', query )
                         .then( function( d ) { callback( null, d ); })
                         .catch( callback );
 
