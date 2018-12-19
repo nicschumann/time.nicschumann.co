@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>{% block title %}Home{% endblock %} - Work-Shop</title>
+        <link rel="stylesheet" href="/static/styles/bundle.css" />
+    </head>
+    <body class="{% block body_classes %}{% endblock %}">
+        <main id="main">
+            {% block content %}{% endblock %}
+        </main>
+    </body>
+    {% block scripts_extra %}{% endblock %}
+    <script type="text/javascript" src="/static/scripts/bundle.js"></script>
+</html>

@@ -1,0 +1,77 @@
+
+/* Variables */
+
+
+
+//brand colors
+$brand: #2B388F;
+$link: #D84949;
+$brand-background: #81d742;
+
+$english: lighten( $brand, 7 );
+$espanol: darken( $brand, 7 );
+
+$link-darker: darken( $link, 20 );
+$link-lighter: lighten( $link, 5 );
+$brand-darker: darken( $brand, 20 );
+
+
+//grays
+$ultra-light: #F5F5F5;
+$light: #D8D8D8;
+$medium-light: #9B9B9B;
+$medium: #828282;
+$medium-dark: #555555;
+$dark: #222222;
+
+// Defaults for image tints.
+$default-opacity: 0.6;
+$default-tint-color: #ffffff;
+
+//utility colors
+$error: #ff4a4a;
+
+
+//sizes
+$nav-height: 60px;
+$nav-drop: $nav-height;
+$nav-drop-after: $nav-height - 1px;
+$nav-height-mobile: 50px;
+$container-fluid-max-width: none;
+$container-fluid-padding: 50px;
+$container-fluid-padding-md: $container-fluid-padding / 2;
+$container-fluid-padding-mobile: 15px;
+$container-fluid-sum: $container-fluid-padding * 2;
+$container-fluid-sum-mobile: $container-fluid-padding-mobile * 2;
+
+
+//transitions
+$modal-transition: .35s;
+$nav-transition-duration: 250ms;
+
+
+//breakpoints
+$xs: 575px;
+$sm: 767px;
+$md: 991px;
+$lg: 1199px;
+
+
+//site
+$body-background-color: white;
+$yellow: #FDBA44;
+$yellow: #FFCB45;
+$yellow-darker: darken($yellow, 16%);
+
+$font-main: 'minimal mono', Courier, monospace;
+$font-italic: 'minimal mono', Courier, monospace;
+$font-bold: 'minimal mono', Courier, monospace;
+$font-bold-italic: 'minimal mono', Courier, monospace;
+$font-medium: 'minimal mono', Courier, monospace;
+$font-medium-italic: 'minimal mono', Courier, monospace;
+$font-light: 'minimal mono', Courier, monospace;
+$font-light-italic: 'minimal mono', Courier, monospace;
+$font-serif: 'matol', Arial, Helvetica, sans-serif;
+$font-serif-italic: 'matol', Arial, Helvetica, sans-serif;
+$font-serif-bold: 'matol', Arial, Helvetica, sans-serif;
+$font-serif-bold-italic: 'matol', Arial, Helvetica, sans-serif;

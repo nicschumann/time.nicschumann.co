@@ -1,0 +1,27 @@
+html, body {
+    font-family: "Apercu-Regular", sans-serif;
+}
+
+.light {
+    font-family: "Apercu-Light", sans-serif;
+
+    &.italic {
+        font-family: "Apercu-Light-Italic", sans-serif;
+    }
+}
+
+.bold {
+    font-family: "Apercu-Bold", sans-serif;
+
+    &.italic {
+        font-family: "Apercu-Bold-Italic", sans-serif;
+    }
+}
+
+.mono {
+    font-family: "Apercu-Mono", sans-serif;
+}
+
+.dummy {
+    display: none;
+}

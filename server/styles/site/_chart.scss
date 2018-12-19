@@ -1,0 +1,146 @@
+$reference-color: #777777;
+$line-color: #575757;
+$box-line-color: $line-color;
+$box-fill-color: #efefef;
+$mean-color: black;
+$entry-background: #151515;
+
+
+$detail-background-color: #151515;
+
+
+/**
+ * Aggregate Charts
+ */
+
+.reference-line {
+    stroke: $reference-color;
+    stroke-width: 0.05%;
+    stroke-dasharray: 2,5;
+}
+
+
+.range-line, .range-tick {
+    stroke: $line-color;
+    stroke-width: 1px;
+}
+
+
+.range-line {
+    stroke-linecap: butt;
+}
+
+
+.range-tick {
+    stroke-linecap: square;
+}
+
+
+.standard-deviation {
+    stroke: $box-line-color;
+    fill: $box-fill-color;
+}
+
+
+.mean-marker {
+    stroke: $mean-color;
+    stroke-width: 2;
+}
+
+
+.text-label {
+    fill: #555;
+    font-family: "Apercu-Regular", sans-serif;
+}
+
+
+/**
+ * Detail View
+ */
+
+.entry-background {
+    fill: $entry-background;
+}
+
+.entry-baseline {
+    stroke-width: 2px;
+    stroke: white;
+}
+
+.entry-center-line {
+    stroke-width: 0.5px;
+    stroke: #777;
+}
+
+.graph-line {
+    stroke: white;
+    fill: none;
+    cursor: pointer;
+
+    &:hover {
+        stroke-width: 4px;
+    }
+}
+
+.entry-point {
+    stroke:white;
+    fill: $entry-background;
+}
+
+.enjoyment-graph-line, .entry-enjoyment-point {
+    stroke-width: 1px;
+    stroke-dasharray: 5,5;
+}
+
+.productivity-graph-line, .entry-productivity-point {
+    stroke-width: 2px;
+}
+
+.satisfaction-graph-line, .entry-satisfaction-point {
+    stroke-width: 1px;
+    stroke-dasharray: 1,1;
+}
+
+
+.entry-time-label {
+    fill: white;
+    font-weight: bold;
+}
+
+.entry-type-label {
+    fill:white;
+}
+
+
+
+.tick-mark {
+    stroke-width: 1px;
+    stroke: gray;
+}
+
+.long-tick-mark {
+    stroke-dasharray:1,1;
+    stroke-width: 1px;
+    stroke: gray;
+}
+
+.entry-arc {
+    fill: none;
+    stroke: darkgray;
+}
+
+.base-arc {
+    fill: none;
+    stroke: #efefef;
+}
+
+.detail-chart-anchor-line {
+    stroke-width: 1px;
+    stroke:black;
+
+}
+
+.cursor {
+    stroke-width: 1px;
+    stroke: red;
+}
