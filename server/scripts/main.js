@@ -4,9 +4,9 @@ var d3 = Object.assign( require('d3'), require('d3-fetch') );
 
 import { livereload } from './livereload-client.js';
 import { Sizing } from './sizing/index.js';
-import { AggregationPane } from './components/aggregation/index.js';
-import { WeekSummaries } from './components/week-summary/index.js';
-import { HourSummaries } from './components/hours-summary/index.js';
+import { OptionsPane } from './components/options-pane/index.js';
+// import { WeekSummaries } from './components/week-summary/index.js';
+// import { HourSummaries } from './components/hours-summary/index.js';
 
 livereload();
 
@@ -14,13 +14,24 @@ console.log('main.js loaded, from gulp!');
 
 var sizing = new Sizing();
 
-var aggregation = AggregationPane( document.querySelector('#main') );
+var options = OptionsPane( document.querySelector('#main') );
 
 // var weeks = WeekSummaries( document.querySelector('#main') );
 //
 // var hours = HourSummaries( document.querySelector('#main') );
 
-aggregation.init( sizing );
+options.init( sizing );
+
+options.sink( function( data ) {
+    console.log( data );
+});
+
+d3  .json( '/api/v1/projects' )
+    .then( function( res ) {
+
+        options.source( res.data.projects.map( function( p ) { return { name: p.name, id: p.id }; } ) );
+
+    });
 
 //hours.init();
 

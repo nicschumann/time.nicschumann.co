@@ -81,3 +81,7 @@ typings/
 
 # Custom configuration
 .env.json
+
+# custom compiled output
+static/scripts
+static/styles
