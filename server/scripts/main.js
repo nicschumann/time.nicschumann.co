@@ -14,24 +14,26 @@ console.log('main.js loaded, from gulp!');
 
 var sizing = new Sizing();
 
-var options = OptionsPane( document.querySelector('#main') );
+var optionsA = OptionsPane( document.querySelector('#left-selector') );
+var optionsB = OptionsPane( document.querySelector('#right-selector') );
 
 // var weeks = WeekSummaries( document.querySelector('#main') );
 //
 // var hours = HourSummaries( document.querySelector('#main') );
 
-options.init( sizing );
-
-options.sink( function( data ) {
-    console.log( data );
-});
+optionsA.init( sizing );
+optionsB.init( sizing );
 
 d3  .json( '/api/v1/projects' )
     .then( function( res ) {
 
-        options.source( res.data.projects.map( function( p ) { return { name: p.name, id: p.id }; } ) );
+        optionsA.source( res.data.projects );
 
     });
+
+optionsA.sink( function( data ) {
+    optionsB.source( data );
+});
 
 //hours.init();
 

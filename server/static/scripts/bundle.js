@@ -26485,6 +26485,7 @@ function OptionsPane(element) {
     self.element = element;
     self.options = [];
     self.prefix = 'id-' + uuid.v4();
+    self.next = function () {};
 }
 
 OptionsPane.prototype.makeSelectElement = function () {
@@ -26517,6 +26518,29 @@ OptionsPane.prototype.init = function () {
     return self;
 };
 
+OptionsPane.prototype.matchActiveOptionsToData = function (data) {
+
+    var self = this;
+
+    if (self.options.length > 0) {
+
+        self.options = self.options.filter(function (option) {
+
+            for (var i in data) {
+                if (data[i].id === option.id) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+    }
+
+    console.log(self.options);
+
+    self.renderActiveOptions();
+};
+
 /**
  * This routine sets the datasource for a given selection renderer,
  * and renders the options-list to the page. This function can be
@@ -26532,7 +26556,11 @@ OptionsPane.prototype.source = function (data) {
 
     var self = this;
 
-    var options = self.selectOptions.classed('select-options-loading', false).classed('select-options-loaded', true).selectAll('.option').data(data);
+    self.matchActiveOptionsToData(data);
+
+    var options = self.selectOptions.classed('select-options-loading', false).classed('select-options-loaded', true).selectAll('.option').data(data, function (d) {
+        return d.id;
+    });
 
     var lis = options.enter().append('li').classed('option', true).classed('option-row', true).attr('id', function (d) {
         return self.prefix + '-option-' + d.id;
@@ -26643,23 +26671,23 @@ console.log('main.js loaded, from gulp!');
 
 var sizing = new _index.Sizing();
 
-var options = (0, _index2.OptionsPane)(document.querySelector('#main'));
+var optionsA = (0, _index2.OptionsPane)(document.querySelector('#left-selector'));
+var optionsB = (0, _index2.OptionsPane)(document.querySelector('#right-selector'));
 
 // var weeks = WeekSummaries( document.querySelector('#main') );
 //
 // var hours = HourSummaries( document.querySelector('#main') );
 
-options.init(sizing);
-
-options.sink(function (data) {
-    console.log(data);
-});
+optionsA.init(sizing);
+optionsB.init(sizing);
 
 d3.json('/api/v1/projects').then(function (res) {
 
-    options.source(res.data.projects.map(function (p) {
-        return { name: p.name, id: p.id };
-    }));
+    optionsA.source(res.data.projects);
+});
+
+optionsA.sink(function (data) {
+    optionsB.source(data);
 });
 
 //hours.init();

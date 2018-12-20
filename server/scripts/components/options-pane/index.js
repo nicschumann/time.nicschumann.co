@@ -10,8 +10,12 @@ function OptionsPane( element ) {
     self.element = element;
     self.options = [];
     self.prefix = 'id-' + uuid.v4();
+    self.next = function() {};
 
 }
+
+
+
 
 
 OptionsPane.prototype.makeSelectElement = function( ) {
@@ -55,6 +59,28 @@ OptionsPane.prototype.init = function( ) {
 
 };
 
+OptionsPane.prototype.matchActiveOptionsToData = function( data ) {
+
+    var self = this;
+
+    if ( self.options.length > 0 ) {
+
+        self.options = self.options.filter( function( option ) {
+
+            for ( var i in data ) { if (data[ i ].id === option.id) { return true; } }
+
+            return false;
+
+        });
+
+    }
+
+    console.log( self.options );
+
+    self.renderActiveOptions();
+
+};
+
 /**
  * This routine sets the datasource for a given selection renderer,
  * and renders the options-list to the page. This function can be
@@ -70,12 +96,14 @@ OptionsPane.prototype.source = function( data ) {
 
     var self = this;
 
+    self.matchActiveOptionsToData( data );
+
     var options =
         self.selectOptions
             .classed( 'select-options-loading', false )
             .classed( 'select-options-loaded', true )
             .selectAll( '.option' )
-            .data( data );
+            .data( data, function( d ) { return d.id; } );
 
     var lis =
         options
