@@ -30767,6 +30767,129 @@ function extend() {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+var d3 = Object.assign(require('d3'), require('d3-fetch'));
+
+function filter_projects(project) {
+    return true;
+}
+
+function reduce_to_name_id_pairs(project) {
+    return { name: project.name, id: project.id };
+}
+
+function AggregationPane(element) {
+    if (!(this instanceof AggregationPane)) {
+        return new AggregationPane(element);
+    }
+    var self = this;
+
+    self.element = element;
+    self.options = [];
+}
+
+function make_select_element(element) {
+    var selectElement = d3.select(element).append('div').classed('select-frame', true);
+
+    selectElement.append('ul').attr('id', 'selected-options').classed('selected-options', true);
+
+    selectElement.append('ul').attr('id', 'select-options').classed('select-options', true).classed('select-options-loading', true);
+
+    return selectElement;
+}
+
+AggregationPane.prototype.init = function (sizing) {
+
+    var self = this;
+
+    make_select_element(self.element);
+
+    self.selectOptions = d3.select('#select-options');
+
+    self.activeOptions = d3.select('#selected-options');
+
+    d3.json('/api/v1/projects').then(function (res) {
+
+        if (res.success && typeof res.data.projects !== 'undefined') {
+
+            var data = res.data.projects.filter(filter_projects).map(reduce_to_name_id_pairs);
+
+            var lis = self.selectOptions.classed('select-options-loading', false).classed('select-options-loaded', true).selectAll('.option').data(data).enter().append('li').classed('option', true).classed('option-row', true).attr('id', function (d) {
+                return 'option-' + d.id;
+            }).attr('data-option-id', function (d) {
+                return d.id;
+            }).attr('value', function (d) {
+                return d.id;
+            }).on('click', function (d) {
+
+                d3.select(this).classed('active', true);
+                self.options.push(d);
+                self.renderActiveOptions();
+            });
+
+            lis.append('p').text(function (d) {
+                return d.name;
+            });
+        } else {
+
+            var error_box = self.selectOptions.classed('select-options-loading', false).classed('select-options-errored', true);
+
+            error_box.append('h3').classed('error-intro', true).text('Whoops, we couldn\'t load any projects!');
+
+            error_box.append('p').classed('error-details', true).text(res.blame.message);
+        }
+    });
+
+    return self;
+};
+
+/**
+ *
+ *
+ *
+ */
+AggregationPane.prototype.renderActiveOptions = function () {
+    var self = this;
+
+    console.log(self.options);
+
+    if (self.options.length === 0) {
+        d3.selectAll('.selected-option').remove();return;
+    }
+
+    var activeOptions = self.activeOptions.selectAll('.selected-option').data(self.options, function (d) {
+        return d.id;
+    });
+
+    var lis = activeOptions.enter().append('li').classed('selected-option', true).classed('option-row', true).attr('id', function (d) {
+        return 'active-option-' + d.id;
+    }).attr('data-option-id', function (d) {
+        return d.id;
+    }).attr('value', function (d) {
+        return d.id;
+    }).on('click', function (d) {
+
+        d3.select('#option-' + d.id).classed('active', false);
+        self.options = self.options.filter(function (option) {
+            return option.id !== d.id;
+        });
+        self.renderActiveOptions();
+    });
+
+    lis.append('p').text(function (d) {
+        return d.name;
+    }).append('span').classed('option-remove-button', true).classed('pictogram', true).text('X');
+
+    activeOptions.exit().remove();
+};
+
+exports.AggregationPane = AggregationPane;
+
+},{"d3":38,"d3-fetch":17}],74:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 var moment = require('moment');
 var d3 = Object.assign(require('d3'), require('d3-fetch'));
 var partition_by = require('../utilities/index.js').partition_by;
@@ -31188,54 +31311,7 @@ HourSummaries.prototype.render = function (data) {
 
 exports.HourSummaries = HourSummaries;
 
-},{"../utilities/index.js":75,"d3":38,"d3-fetch":17,"moment":45}],74:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-var moment = require('moment');
-var d3 = Object.assign(require('d3'), require('d3-fetch'));
-
-function compute_panel_sizing(element, base_sizing) {
-    return base_sizing;
-}
-
-function get_sizing(element) {
-
-    var sizing = { margins: { l: 25, r: 25, t: 50, b: 50 } };
-
-    sizing.width = element.clientWidth - sizing.margins.l - sizing.margins.r;
-    sizing.height = 50;
-
-    return sizing;
-}
-
-function Panel(element) {
-    if (!(this instanceof Panel)) {
-        return new Panel(element);
-    }
-    var self = this;
-
-    self.element = element;
-    self.root = null;
-}
-
-Panel.prototype.render = function () {
-
-    var self = this;
-    var size = get_sizing(self.element);
-
-    self.root = d3.select(self.element).append('div').classed('panel-root', true).style('width', size.width).style('height', size.height);
-
-    self.root.append('button').classed('panel-toggle', true);
-
-    self.root.append('button').classed('panel-toggle', true);
-};
-
-exports.Panel = Panel;
-
-},{"d3":38,"d3-fetch":17,"moment":45}],75:[function(require,module,exports){
+},{"../utilities/index.js":75,"d3":38,"d3-fetch":17,"moment":45}],75:[function(require,module,exports){
 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -31855,11 +31931,13 @@ exports.livereload = livereload;
 
 var _livereloadClient = require('./livereload-client.js');
 
-var _index = require('./components/panel/index.js');
+var _index = require('./sizing/index.js');
 
-var _index2 = require('./components/week-summary/index.js');
+var _index2 = require('./components/aggregation/index.js');
 
-var _index3 = require('./components/hours-summary/index.js');
+var _index3 = require('./components/week-summary/index.js');
+
+var _index4 = require('./components/hours-summary/index.js');
 
 var d3 = Object.assign(require('d3'), require('d3-fetch'));
 
@@ -31867,25 +31945,61 @@ var d3 = Object.assign(require('d3'), require('d3-fetch'));
 
 console.log('main.js loaded, from gulp!');
 
-var panel = (0, _index.Panel)(document.querySelector('#main'));
+var sizing = new _index.Sizing();
 
-var weeks = (0, _index2.WeekSummaries)(document.querySelector('#main'));
+var aggregation = (0, _index2.AggregationPane)(document.querySelector('#main'));
 
-var hours = (0, _index3.HourSummaries)(document.querySelector('#main'));
+// var weeks = WeekSummaries( document.querySelector('#main') );
+//
+// var hours = HourSummaries( document.querySelector('#main') );
+
+aggregation.init(sizing);
 
 //hours.init();
 
-d3.json('/api/v1/entries/12-01-2018/12-11-2018').then(function (res) {
-    if (res.success) {
+// d3.json('/api/v1/entries/12-01-2018/12-11-2018')
+//   .then( function( res ) {
+//       if ( res.success ) {
+//
+//           console.log( res );
+//           weeks.render( res.data );
+//
+//       } else {
+//
+//           console.error( res );
+//       }
+//
+//   })
+//   .catch( function( error ) { console.error( error ); } );
 
-        console.log(res);
-        weeks.render(res.data);
-    } else {
+},{"./components/aggregation/index.js":73,"./components/hours-summary/index.js":74,"./components/week-summary/index.js":76,"./livereload-client.js":77,"./sizing/index.js":79,"d3":38,"d3-fetch":17}],79:[function(require,module,exports){
+'use strict';
 
-        console.error(res);
-    }
-}).catch(function (error) {
-    console.error(error);
+Object.defineProperty(exports, "__esModule", {
+    value: true
 });
+var EventEmitter = require('events');
 
-},{"./components/hours-summary/index.js":73,"./components/panel/index.js":74,"./components/week-summary/index.js":76,"./livereload-client.js":77,"d3":38,"d3-fetch":17}]},{},[78]);
+/**
+ * The sizing module is responsible for tracking
+ * changes to the document sizing, recalculating
+ * size changes based on external events, and
+ * propagating changes to subscribed modules.
+ *
+ */
+function Sizing() {
+    if (!(this instanceof Sizing)) {
+        return new Sizing();
+    }
+    var self = this;
+
+    self.emitter = new EventEmitter();
+}
+
+Sizing.prototype.recalculate = function () {
+    var self = this;
+};
+
+exports.Sizing = Sizing;
+
+},{"events":39}]},{},[78]);
