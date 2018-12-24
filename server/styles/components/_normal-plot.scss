@@ -1,0 +1,80 @@
+$plot-element-color: lightgray;
+
+.normal-plot-container {
+    position:relative;
+    background-color: inherit;
+    width: 100%;
+    height:100%;
+    z-index: 0;
+}
+
+.normal-plot-loading {
+    background: url('/static/images/loading-2.gif') no-repeat center;
+    background-size: 10% 10%;
+    background-color: white;
+    z-index: 500;
+}
+
+
+
+.labels, .plot-rules-labels {
+    position: absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+}
+
+.text-label {
+    position: absolute;
+    text-align: center;
+}
+
+.plot-axis-label {
+    font-size: 12px;
+    text-transform: capitalize;
+    color:$plot-element-color;
+}
+
+.plot-title {
+    font-size: 14px;
+}
+
+.plot-data-label {
+    font-size: 12px;
+}
+
+
+
+.normal-plot-extents-line {
+    stroke:black;
+    stroke-width:2px;
+}
+
+.normal-plot-average-line {
+    stroke:black;
+    stroke-width:4px;
+}
+
+.normal-plot-stdev-box {
+    stroke:black;
+    stroke-width:4px;
+    fill: white;
+}
+
+.plot-axis-line {
+    stroke:$plot-element-color;
+    stroke-width:2px;
+    stroke-dasharray:5 5;
+}
+
+.normal-plot-extents-text {
+    font-size: 25px;
+}
+
+
+
+
+.debug-content-region {
+    fill:yellow;
+}
