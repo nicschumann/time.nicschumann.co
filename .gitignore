@@ -85,3 +85,7 @@ typings/
 # custom compiled output
 static/scripts
 static/styles
+
+# Mac
+
+.DS_Store

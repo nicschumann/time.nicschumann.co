@@ -38,7 +38,7 @@ function Server( paymo, config ) {
 
         self.app.get('entries/by-project/:project', filterAPIRoute.bind( self ) );
 
-        self.app.get('entries/by-project/:project', filterAPIRoute.bind( self ) );
+        //self.app.get('entries/by-project/:project', filterAPIRoute.bind( self ) );
 
         self.app.get('entries/by-date/:start/:end', entriesAPIRoute.bind( self ) );
 
