@@ -30981,6 +30981,137 @@ function extend() {
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var uuid = require('uuid');
+
+/**
+ * Abstract Class: Component
+ * =========================
+ *
+ * The component class is the basis for
+ * all of our interface components. Our
+ * interface components come in two flavors:
+ *
+ * 1. TransformComponents. TransformComponents handle transforming
+ *                         data in some way, and passing the results on to downstream components.
+ *
+ * 2. RenderComponents. RenderComponents are responsible for actually rendering data to the page.
+ *
+ */
+
+var Component = function () {
+
+    /**
+     *
+     *
+     *
+     */
+    function Component() {
+        _classCallCheck(this, Component);
+
+        this.prefix = 'id-' + uuid.v4();
+        this.data = [];
+        this.downstream = {};
+    }
+
+    /**
+     * The init routine handles any
+     * setup that this component requires.
+     */
+
+
+    _createClass(Component, [{
+        key: 'init',
+        value: function init() {
+            return this;
+        }
+
+        /**
+         * The source routine assigns a set of
+         * data to this component, and propagates
+         * changed data to downstream components.
+         */
+
+    }, {
+        key: 'trigger',
+        value: function trigger(data) {
+
+            for (var id in this.downstream) {
+                if (this.downstream.hasOwnProperty(id)) {
+                    this.downstream[id].trigger(data);
+                }
+            }
+
+            return this;
+        }
+
+        /**
+         * Given a downstream component to add, add the passed
+         * component to the set of downstreams at this component,
+         * and trigger the passed component with this components data.
+         *
+         */
+
+    }, {
+        key: 'through',
+        value: function through(component) {
+
+            if (component.prefix === this.prefix) {
+                throw new Error('ComponentError: tried to add a component as a downstream of itelf.');
+            }
+
+            this.downstream[component.prefix] = component;
+
+            component.trigger(this.data);
+
+            return component;
+        }
+
+        /**
+         * Given a downstream component to remove,
+         * remove that component from the set of downstreams
+         * at this component.
+         */
+
+    }, {
+        key: 'remove',
+        value: function remove(component) {
+
+            if (typeof this.downstream[component.prefix] !== 'undefined') {
+                delete this.downstream[component.prefix];
+            }
+
+            return this;
+        }
+    }]);
+
+    return Component;
+}();
+
+exports.Component = Component;
+
+},{"uuid":71}],79:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.GroupDays = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _transform = require('../transform.js');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 var moment = require('moment');
 var partitionBy = require('../utilities/index.js').partition_by;
 
@@ -30993,286 +31124,447 @@ function byDatetime(a, b) {
     var a_date = moment(a.day.split(' - ')[1], 'MM/DD/YYYY');
     var b_date = moment(b.day.split(' - ')[1], 'MM/DD/YYYY');
 
-    if (b_date.isAfter(a_date)) {
-        return -1;
-    } else if (b_date.isBefore(a_date)) {
-        return 1;
-    } else {
-        return 0;
-    }
+    return b_date.isAfter(a_date) ? -1 : b_date.isBefore(a_date) ? 1 : 0;
 }
 
-function GroupDays() {
-    if (!(this instanceof GroupDays)) {
-        return new GroupDays();
+var GroupDays = function (_TransformComponent) {
+    _inherits(GroupDays, _TransformComponent);
+
+    /**
+     * This constructor takes a single parameter, indicating
+     * whether or not to sort the output by datetime.
+     * defaults to sorted output. Pass false to leave unsorted.
+     */
+    function GroupDays() {
+        var sorted = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+        _classCallCheck(this, GroupDays);
+
+        var _this = _possibleConstructorReturn(this, (GroupDays.__proto__ || Object.getPrototypeOf(GroupDays)).call(this));
+
+        _this.sorted = sorted;
+        return _this;
     }
-    var self = this;
 
-    self.next = function () {};
-    self.transformed = [];
-}
+    /**
+     * This transform routine implements a simple routine
+     * for grouping a set of entries by the day they occurred on.
+     */
 
-/**
- * given a set of time-entry data, group that data into
- * days.
- */
-GroupDays.prototype.source = function (data) {
 
-    this.transformed = partitionBy(function (object) {
-        return moment(object.start_time).format('dddd - MM/DD/YYYY');
-    }, data).map(function (day) {
+    _createClass(GroupDays, [{
+        key: 'transform',
+        value: function transform(data) {
 
-        var date = day.day.split(' - ');
+            data = partitionBy(function (object) {
+                return moment(object.start_time).format('dddd - MM/DD/YYYY');
+            }, data).map(function (day) {
 
-        day.date = date[1];
-        day.day = date[0];
+                var date = day.day.split(' - ');
 
-        return day;
-    });
+                day.date = date[1];
+                day.day = date[0];
 
-    this.transformed.sort(byDatetime);
+                return day;
+            });
 
-    this.next(this.transformed);
+            if (this.sorted) {
+                data.sort(byDatetime);
+            }
 
-    return this;
-};
+            return data;
+        }
+    }]);
 
-/**
- * Set the next function in this chain.
- */
-GroupDays.prototype.sink = function (next) {
-
-    this.next = next;
-
-    this.next(this.transformed);
-
-    return this;
-};
+    return GroupDays;
+}(_transform.TransformComponent);
 
 exports.GroupDays = GroupDays;
 
-},{"../utilities/index.js":83,"moment":45}],79:[function(require,module,exports){
+},{"../transform.js":86,"../utilities/index.js":88,"moment":45}],80:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+exports.Lift = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _transform = require('../transform.js');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var Lift = function (_TransformComponent) {
+    _inherits(Lift, _TransformComponent);
+
+    function Lift(f) {
+        _classCallCheck(this, Lift);
+
+        var _this = _possibleConstructorReturn(this, (Lift.__proto__ || Object.getPrototypeOf(Lift)).call(this));
+
+        _this.f = f;
+        return _this;
+    }
+
+    /**
+     * This dead-simple component just logs the data
+     * passing through it to the console.
+     */
+
+
+    _createClass(Lift, [{
+        key: 'transform',
+        value: function transform(data) {
+            return data.map(this.f);
+        }
+    }]);
+
+    return Lift;
+}(_transform.TransformComponent);
+
+exports.Lift = Lift;
+
+},{"../transform.js":86}],81:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.LogComponent = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _transform = require('../transform.js');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var LogComponent = function (_TransformComponent) {
+    _inherits(LogComponent, _TransformComponent);
+
+    function LogComponent() {
+        _classCallCheck(this, LogComponent);
+
+        return _possibleConstructorReturn(this, (LogComponent.__proto__ || Object.getPrototypeOf(LogComponent)).call(this));
+    }
+
+    /**
+     * This dead-simple component just logs the data
+     * passing through it to the console.
+     */
+
+
+    _createClass(LogComponent, [{
+        key: 'transform',
+        value: function transform(data) {
+
+            console.log(data);
+
+            return data;
+        }
+    }]);
+
+    return LogComponent;
+}(_transform.TransformComponent);
+
+exports.LogComponent = LogComponent;
+
+},{"../transform.js":86}],82:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.NormalPlot = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _render = require('../render.js');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 var uuid = require('uuid');
 var d3 = Object.assign(require('d3'), require('d3-fetch'));
 var linear = require('../utilities/index.js').linear_map;
 var colors = require('../utilities/color.js');
 
-function NormalPlot(element) {
-    if (!(this instanceof NormalPlot)) {
-        return new NormalPlot(element);
+var NormalPlot = function (_RenderComponent) {
+    _inherits(NormalPlot, _RenderComponent);
+
+    /**
+     *
+     */
+    function NormalPlot(element) {
+        _classCallCheck(this, NormalPlot);
+
+        var _this = _possibleConstructorReturn(this, (NormalPlot.__proto__ || Object.getPrototypeOf(NormalPlot)).call(this, element));
+
+        _this.viewBox = {
+            x: 0,
+            y: 0,
+            width: 1000,
+            height: 1000,
+            horizontal_margin: 50,
+            vertical_margin: 75,
+            inner_margin: 10,
+            text_margin: 25
+        };
+
+        _this.maps = {};
+        _this.static = {};
+        _this.dynamic = {};
+
+        _this.keys = ['satisfaction', 'productivity', 'enjoyment'];
+
+        return _this;
     }
-    var self = this;
 
-    self.element = element;
-    self.prefix = 'id-' + uuid.v4();
+    /**
+     * The init method for NormalPlot sets up
+     * the variously statically determinable DOMElement
+     * that can be
+     */
 
-    self.viewBox = {
-        x: 0,
-        y: 0,
-        width: 1000,
-        height: 1000,
-        horizontal_margin: 50,
-        vertical_margin: 75,
-        inner_margin: 10,
-        text_margin: 25
-    };
 
-    self.maps = {};
-    self.static = {};
-    self.dynamic = {};
+    _createClass(NormalPlot, [{
+        key: 'init',
+        value: function init() {
+            this.container = d3.select(this.element).append('div').attr('id', this.prefix + '-normal-plot').classed('normal-plot-loading', true).classed('normal-plot-container', true);
 
-    self.keys = ['satisfaction', 'productivity', 'enjoyment'];
-}
+            this.diagram = this.container.append('svg').classed('normal-plot', true).attr('width', '100%').attr('height', '100%').attr('viewBox', [this.viewBox.x, this.viewBox.y, this.viewBox.width, this.viewBox.height].join(' ')).append('g').attr('id', 'diagram-root').attr('width', this.viewBox.width).attr('height', this.viewBox.width);
 
-NormalPlot.prototype.init = function () {
+            this.static.plot = this.diagram.append('g').classed('plot-rules', true);
 
-    var self = this;
+            this.static.labels = this.container.append('div').classed('plot-rules-labels', true);
 
-    self.container = d3.select(this.element).append('div').attr('id', self.prefix + '-normal-plot').classed('normal-plot-loading', true).classed('normal-plot-container', true);
+            return this;
+        }
 
-    self.diagram = self.container.append('svg').classed('normal-plot', true).attr('width', '100%').attr('height', '100%').attr('viewBox', [self.viewBox.x, self.viewBox.y, self.viewBox.width, self.viewBox.height].join(' ')).append('g').attr('id', 'diagram-root').attr('width', self.viewBox.width).attr('height', self.viewBox.width);
+        /**
+         * Draw an axis tick line given a location
+         * in the y axis domain (ie, in [0,10]).
+         */
 
-    return this;
-};
+    }, {
+        key: 'drawPlotTickLine',
+        value: function drawPlotTickLine(y_location) {
 
-/**
- * Draw a simple marker across the horizontal extent
- * of the normal plot, indicating the y-axis height of a
- * certain score.
- */
-NormalPlot.prototype.drawPlotTickLine = function (plot, labels, where) {
+            this.dynamic.plot.append('line').classed('plot-axis-line', true).attr('x1', this.viewBox.horizontal_margin).attr('x2', this.viewBox.width - this.viewBox.text_margin).attr('y1', this.maps.y(y_location)).attr('y2', this.maps.y(y_location));
 
-    var self = this;
+            this.dynamic.plot.append('text').classed('plot-axis-label', true).attr('x', this.viewBox.horizontal_margin).attr('y', this.maps.y(y_location) - this.viewBox.text_margin).text(y_location);
 
-    plot.append('line').classed('plot-axis-line', true).attr('x1', self.viewBox.horizontal_margin).attr('x2', self.viewBox.width - self.viewBox.text_margin).attr('y1', self.maps.y(where)).attr('y2', self.maps.y(where));
+            return this;
+        }
 
-    plot.append('text').classed('plot-axis-label', true).attr('x', self.viewBox.horizontal_margin).attr('y', self.maps.y(where) - self.viewBox.text_margin).text(where);
+        /**
+         * Draw the static labels on the plot. These are the labels
+         * which do not depend on the data being rendered by this plot.
+         */
 
-    return self;
-};
+    }, {
+        key: 'drawPlotLabels',
+        value: function drawPlotLabels(width) {
 
-NormalPlot.prototype.drawPlotLabels = function (plot, labels, w) {
+            var self = this;
 
-    var self = this;
+            self.keys.forEach(function (key, i) {
 
-    self.keys.forEach(function (key, i) {
+                self.static.labels.append('span').classed('text-label', true).classed('plot-axis-label', true).style('left', self.maps.x(i, 0) / 10 + '%').style('top', (self.maps.y(10) - self.viewBox.text_margin) / 10 + '%').style('width', (width - 2 * self.viewBox.inner_margin) / 10 + '%').text(key);
+            });
 
-        labels.append('span').classed('text-label', true).classed('plot-axis-label', true).style('left', self.maps.x(i, 0) / 10 + '%').style('top', (self.maps.y(10) - self.viewBox.text_margin) / 10 + '%').style('width', (w - 2 * self.viewBox.inner_margin) / 10 + '%').text(key);
-    });
+            self.static.labels.append('span').classed('text-label', true).classed('plot-axis-label', true).classed('plot-title', true).style('left', '0%').style('top', (self.maps.y(0) + 4 * self.viewBox.text_margin) / 10 + '%').style('width', '100%').text('Chart Title');
 
-    labels.append('span').classed('text-label', true).classed('plot-axis-label', true).classed('plot-title', true).style('left', '0%').style('top', (self.maps.y(0) + 4 * self.viewBox.text_margin) / 10 + '%').style('width', '100%').text('Chart Title');
+            return self;
+        }
 
-    return self;
-};
+        /**
+         * This routine draws the background line behind the box plot.
+         */
 
-NormalPlot.prototype.drawExtentsLine = function (plot, labels, key, i, iw) {
+    }, {
+        key: 'drawExtentsLine',
+        value: function drawExtentsLine(key, i, iw) {
+            var self = this;
 
-    var self = this;
+            var offset_multiplier = 1 / 3;
+            var width_multiplier = 1 - offset_multiplier;
 
-    var offset_multiplier = 1 / 3;
-    var width_multiplier = 1 - offset_multiplier;
+            // NOTE: Plot Elements
 
-    // NOTE: Plot Elements
+            self.dynamic.plot.append('line').classed('normal-plot-extents-line', true).classed('normal-plot-' + key + '-extents-line', true).attr('x1', function (d, j) {
+                return self.maps.x(i, j) + iw / 2;
+            }).attr('y1', function (d) {
+                return self.maps.y(d[key].max);
+            }).attr('x2', function (d, j) {
+                return self.maps.x(i, j) + iw / 2;
+            }).attr('y2', function (d) {
+                return self.maps.y(d[key].min);
+            });
 
-    plot.append('line').classed('normal-plot-extents-line', true).classed('normal-plot-' + key + '-extents-line', true).attr('x1', function (d, j) {
-        return self.maps.x(i, j) + iw / 2;
-    }).attr('y1', function (d) {
-        return self.maps.y(d[key].max);
-    }).attr('x2', function (d, j) {
-        return self.maps.x(i, j) + iw / 2;
-    }).attr('y2', function (d) {
-        return self.maps.y(d[key].min);
-    });
+            self.dynamic.plot.append('line').classed('normal-plot-extents-line', true).classed('normal-plot-' + key + '-extents-line', true).attr('x1', function (d, j) {
+                return self.maps.x(i, j) + offset_multiplier * iw;
+            }).attr('y1', function (d) {
+                return self.maps.y(d[key].max);
+            }).attr('x2', function (d, j) {
+                return self.maps.x(i, j) + width_multiplier * iw;
+            }).attr('y2', function (d) {
+                return self.maps.y(d[key].max);
+            });
 
-    plot.append('line').classed('normal-plot-extents-line', true).classed('normal-plot-' + key + '-extents-line', true).attr('x1', function (d, j) {
-        return self.maps.x(i, j) + offset_multiplier * iw;
-    }).attr('y1', function (d) {
-        return self.maps.y(d[key].max);
-    }).attr('x2', function (d, j) {
-        return self.maps.x(i, j) + width_multiplier * iw;
-    }).attr('y2', function (d) {
-        return self.maps.y(d[key].max);
-    });
+            self.dynamic.plot.append('line').classed('normal-plot-extents-line', true).classed('normal-plot-' + key + '-extents-line', true).attr('x1', function (d, j) {
+                return self.maps.x(i, j) + offset_multiplier * iw;
+            }).attr('y1', function (d) {
+                return self.maps.y(d[key].min);
+            }).attr('x2', function (d, j) {
+                return self.maps.x(i, j) + width_multiplier * iw;
+            }).attr('y2', function (d) {
+                return self.maps.y(d[key].min);
+            });
 
-    plot.append('line').classed('normal-plot-extents-line', true).classed('normal-plot-' + key + '-extents-line', true).attr('x1', function (d, j) {
-        return self.maps.x(i, j) + offset_multiplier * iw;
-    }).attr('y1', function (d) {
-        return self.maps.y(d[key].min);
-    }).attr('x2', function (d, j) {
-        return self.maps.x(i, j) + width_multiplier * iw;
-    }).attr('y2', function (d) {
-        return self.maps.y(d[key].min);
-    });
+            // NOTE: Label Elements
 
-    // NOTE: Label Elements
+            self.dynamic.labels.append('span').classed('text-label', true).classed('plot-data-label', true).style('left', function (d, j) {
+                return self.maps.x(i, j) / 10 + '%';
+            }).style('top', function (d) {
+                return (self.maps.y(d[key].max) - 50) / 10 + '%';
+            }).style('width', iw / 10 + '%').text(function (d) {
+                return d[key].max;
+            });
 
-    labels.append('span').classed('text-label', true).classed('plot-data-label', true).style('left', function (d, j) {
-        return self.maps.x(i, j) / 10 + '%';
-    }).style('top', function (d) {
-        return (self.maps.y(d[key].max) - 50) / 10 + '%';
-    }).style('width', iw / 10 + '%').text(function (d) {
-        return d[key].max;
-    });
+            self.dynamic.labels.append('span').classed('text-label', true).classed('plot-data-label', true).style('left', function (d, j) {
+                return self.maps.x(i, j) / 10 + '%';
+            }).style('top', function (d) {
+                return self.maps.y(d[key].min) / 10 + '%';
+            }).style('width', iw / 10 + '%').text(function (d) {
+                return d[key].min;
+            });
 
-    labels.append('span').classed('text-label', true).classed('plot-data-label', true).style('left', function (d, j) {
-        return self.maps.x(i, j) / 10 + '%';
-    }).style('top', function (d) {
-        return self.maps.y(d[key].min) / 10 + '%';
-    }).style('width', iw / 10 + '%').text(function (d) {
-        return d[key].min;
-    });
+            return this;
+        }
 
-    return this;
-};
+        /**
+         *
+         *
+         */
 
-/**
- * Given an aggregated view of some data,
- * construct a normal plot for that
- *
- *
- */
-NormalPlot.prototype.source = function (data) {
+    }, {
+        key: 'drawAverageLine',
+        value: function drawAverageLine(key, i, iw) {
 
-    console.log(data);
+            var self = this;
 
-    var self = this;
+            self.dynamic.plot.append('line').classed('normal-plot-average-line', true).classed('normal-plot-' + key + '-average-line', true).attr('x1', function (d, j) {
+                return self.maps.x(i, j);
+            }).attr('y1', function (d) {
+                return self.maps.y(d[key].avg);
+            }).attr('x2', function (d, j) {
+                return self.maps.x(i, j) + iw;
+            }).attr('y2', function (d) {
+                return self.maps.y(d[key].avg);
+            });
 
-    self.container.classed('normal-plot-loading', true);
+            return self;
+        }
 
-    var n = data.length;
-    var m = self.viewBox.horizontal_margin;
-    var mₜ = m * (self.keys.length + 1);
-    var wₜ = self.viewBox.width - mₜ;
-    var w = wₜ / self.keys.length;
+        /**
+         *
+         *
+         */
 
-    var im = self.viewBox.inner_margin;
-    var imₜ = im * (n + 1);
-    var iwₜ = w - imₜ;
-    var iw = iwₜ / n;
+    }, {
+        key: 'drawStdevBox',
+        value: function drawStdevBox(key, i, iw) {
 
-    self.maps.x = function (i, j) {
-        return m + im + i * (w + m) + j * (iw + im);
-    };
-    self.maps.x_percent = function (i, j) {
-        return self.maps.x(i, j) / 10;
-    };
+            var self = this;
 
-    self.maps.y = linear(0, 10)(self.viewBox.height - self.viewBox.vertical_margin, self.viewBox.vertical_margin);
-    self.maps.y_percent = function (value) {
-        return self.maps.y(value) / 10;
-    };
+            self.dynamic.plot.append('rect').classed('normal-plot-stdev-box', true).classed('normal-plot-' + key + '-stdev-box', true).attr('x', function (d, j) {
+                return self.maps.x(i, j) + iw / 8;
+            }).attr('y', function (d) {
+                return self.maps.y(d[key].avg + d[key].stdev);
+            }).attr('width', 3 / 4 * iw).attr('height', function (d) {
+                return self.maps.y(0) - self.maps.y(d[key].stdev * 2);
+            }).attr('style', function (d) {
+                return 'fill:' + colors.rgb[key](d);
+            });
 
-    self.static.plot = self.diagram.append('g').classed('plot-rules', true);
+            return self;
+        }
 
-    self.static.labels = self.container.append('div').classed('plot-rules-labels', true);
+        /**
+         * Override the parents rendering routine to
+         * to implement our baseline rendering.
+         */
 
-    self.dynamic.plot = self.diagram.selectAll('.plot').data(data).enter().append('g').classed('plot', true);
+    }, {
+        key: 'render',
+        value: function render(data) {
+            console.log(data);
 
-    self.dynamic.labels = self.container.selectAll('.labels').data(data).enter().append('div').classed('labels', true);
+            var self = this;
 
-    self.drawPlotLabels(self.static.plot, self.static.labels, w, im);
-    self.drawPlotTickLine(self.static.plot, self.static.labels, 2.5);
-    self.drawPlotTickLine(self.static.plot, self.static.labels, 5);
-    self.drawPlotTickLine(self.static.plot, self.static.labels, 7.5);
+            self.container.classed('normal-plot-loading', true);
 
-    self.keys.forEach(function (key, i) {
+            var n = data.length;
+            var m = self.viewBox.horizontal_margin;
+            var mₜ = m * (self.keys.length + 1);
+            var wₜ = self.viewBox.width - mₜ;
+            var w = wₜ / self.keys.length;
 
-        self.drawExtentsLine(self.dynamic.plot, self.dynamic.labels, key, i, iw);
+            var im = self.viewBox.inner_margin;
+            var imₜ = im * (n + 1);
+            var iwₜ = w - imₜ;
+            var iw = iwₜ / n;
 
-        self.dynamic.plot.append('line').classed('normal-plot-average-line', true).classed('normal-plot-' + key + '-average-line', true).attr('x1', function (d, j) {
-            return self.maps.x(i, j);
-        }).attr('y1', function (d) {
-            return self.maps.y(d[key].avg);
-        }).attr('x2', function (d, j) {
-            return self.maps.x(i, j) + iw;
-        }).attr('y2', function (d) {
-            return self.maps.y(d[key].avg);
-        });
+            self.maps.x = function (i, j) {
+                return m + im + i * (w + m) + j * (iw + im);
+            };
+            self.maps.x_percent = function (i, j) {
+                return self.maps.x(i, j) / 10;
+            };
 
-        self.dynamic.plot.append('rect').classed('normal-plot-stdev-box', true).classed('normal-plot-' + key + '-stdev-box', true).attr('x', function (d, j) {
-            return self.maps.x(i, j) + iw / 8;
-        }).attr('y', function (d) {
-            return self.maps.y(d[key].avg + d[key].stdev);
-        }).attr('width', function (d, j) {
-            return 3 / 4 * iw;
-        }).attr('height', function (d) {
-            return self.maps.y(0) - self.maps.y(d[key].stdev * 2);
-        }).attr('style', function (d) {
-            return 'fill:' + colors.rgb[key](d);
-        });
-    });
+            self.maps.y = linear(0, 10)(self.viewBox.height - self.viewBox.vertical_margin, self.viewBox.vertical_margin);
+            self.maps.y_percent = function (value) {
+                return self.maps.y(value) / 10;
+            };
 
-    self.container.classed('normal-plot-loading', false);
-};
+            self.dynamic.plot = self.diagram.selectAll('.plot').data(data).enter().append('g').classed('plot', true);
+
+            self.dynamic.labels = self.container.selectAll('.labels').data(data).enter().append('div').classed('labels', true);
+
+            self.drawPlotLabels(w);
+            self.drawPlotTickLine(2.5);
+            self.drawPlotTickLine(5);
+            self.drawPlotTickLine(7.5);
+
+            self.keys.forEach(function (key, i) {
+
+                self.drawExtentsLine(key, i, iw);
+                self.drawAverageLine(key, i, iw);
+                self.drawStdevBox(key, i, iw);
+            });
+
+            self.container.classed('normal-plot-loading', false);
+        }
+    }]);
+
+    return NormalPlot;
+}(_render.RenderComponent);
 
 exports.NormalPlot = NormalPlot;
 
-},{"../utilities/color.js":82,"../utilities/index.js":83,"d3":38,"d3-fetch":17,"uuid":71}],80:[function(require,module,exports){
+},{"../render.js":84,"../utilities/color.js":87,"../utilities/index.js":88,"d3":38,"d3-fetch":17,"uuid":71}],83:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31443,132 +31735,247 @@ OptionsPane.prototype.renderActiveOptions = function () {
 
 exports.OptionsPane = OptionsPane;
 
-},{"d3":38,"d3-fetch":17,"uuid":71}],81:[function(require,module,exports){
+},{"d3":38,"d3-fetch":17,"uuid":71}],84:[function(require,module,exports){
 'use strict';
 
-/**
- * This summary class implements a procedure for rolling up a set of
- * time entries into summary statistics: min, max, mean, and standard deviation.
- *
- */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.RenderComponent = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
+
+var _component = require('./component.js');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var RenderComponent = function (_Component) {
+  _inherits(RenderComponent, _Component);
+
+  /**
+   * RenderComponents require a DOMElement to
+   * attatch their visualization or interface
+   * logic to.
+   */
+  function RenderComponent(element) {
+    _classCallCheck(this, RenderComponent);
+
+    var _this = _possibleConstructorReturn(this, (RenderComponent.__proto__ || Object.getPrototypeOf(RenderComponent)).call(this));
+
+    _this.element = element;
+
+    return _this;
+  }
+
+  /**
+   * This routine implements a rendering procedure
+   * for drawing the supplied data to the
+   */
+
+
+  _createClass(RenderComponent, [{
+    key: 'render',
+    value: function render(data) {
+      return this;
+    }
+
+    /**
+     * Override the default triggering behavior to
+     * render the passed data, and then trigger the super
+     */
+
+  }, {
+    key: 'trigger',
+    value: function trigger(data) {
+
+      this.data = this.render(data);
+
+      return _get(RenderComponent.prototype.__proto__ || Object.getPrototypeOf(RenderComponent.prototype), 'trigger', this).call(this, data);
+    }
+  }]);
+
+  return RenderComponent;
+}(_component.Component);
+
+exports.RenderComponent = RenderComponent;
+
+},{"./component.js":78}],85:[function(require,module,exports){
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-function Summary() {
-    if (!(this instanceof Summary)) {
-        return new Summary();
+exports.SummaryComponent = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _transform = require('../transform.js');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var SummaryComponent = function (_TransformComponent) {
+    _inherits(SummaryComponent, _TransformComponent);
+
+    function SummaryComponent() {
+        _classCallCheck(this, SummaryComponent);
+
+        var _this = _possibleConstructorReturn(this, (SummaryComponent.__proto__ || Object.getPrototypeOf(SummaryComponent)).call(this));
+
+        _this.keys = ['satisfaction', 'productivity', 'enjoyment'];
+        return _this;
     }
-    var self = this;
-
-    self.transformed = [];
-    self.next = function () {};
-
-    self.keys = ['satisfaction', 'productivity', 'enjoyment'];
-}
-
-/**
- * This function specifies an initial condition for
- * the summary. This is used at the beginning of the
- * aggregation process.
- */
-Summary.prototype.initial = function () {
-    return {
-        satisfaction: { avg: 0, min: Infinity, max: -Infinity, stdev: 0 },
-        productivity: { avg: 0, min: Infinity, max: -Infinity, stdev: 0 },
-        enjoyment: { avg: 0, min: Infinity, max: -Infinity, stdev: 0 }
-    };
-};
-
-/**
- * This function summarizes the the input data by computing the
- * mean, min, max, and standard deviation from the mean.
- */
-Summary.prototype.summarize = function (data) {
-
-    var self = this;
-
-    var total_duration = data.reduce(function (total, datapoint) {
-        return total + datapoint.duration;
-    }, 0);
 
     /**
-     * Step 1. Calculate the basic summarys statistics for the set of entries we're given.
+     *
+     *
      */
-    var averages = data.reduce(function (running_summary, datapoint) {
 
-        var wᵢ = datapoint.duration / total_duration;
 
-        self.keys.forEach(function (key) {
+    _createClass(SummaryComponent, [{
+        key: 'initial',
+        value: function initial() {
+            return {
+                satisfaction: { avg: 0, min: Infinity, max: -Infinity, stdev: 0 },
+                productivity: { avg: 0, min: Infinity, max: -Infinity, stdev: 0 },
+                enjoyment: { avg: 0, min: Infinity, max: -Infinity, stdev: 0 }
+            };
+        }
+    }, {
+        key: 'transform',
+        value: function transform(data) {
 
-            running_summary[key].avg += wᵢ * datapoint.description[key];
-            running_summary[key].min = Math.min(running_summary[key].min, datapoint.description[key]);
-            running_summary[key].max = Math.max(running_summary[key].max, datapoint.description[key]);
-        });
+            var self = this;
 
-        return running_summary;
-    }, self.initial());
+            var total_duration = data.reduce(function (total, datapoint) {
+                return total + datapoint.duration;
+            }, 0);
 
-    /**
-     * Step 2. Calculate the deviations from the calculated mean.
-     */
-    var finished = data.reduce(function (running_summary, datapoint) {
-
-        var wᵢ = Math.pow(datapoint.duration / total_duration, 2);
-
-        self.keys.forEach(function (key) {
             /**
-             * Note that this changes the way the statistical properties of the
-             * weighted mean is constructed. In particular, since the w_i sum to 1,
-             * the weighted average no longer needs to be divided by any particular quantity.
-             *
-             * The standard deviation of the weighted mean, which is the square root of
-             * the product of the squares of the variance terms and cooresponding weights,
-             * should properly be called the standard error of the weighted mean.
-             *
-             * Letting σᵢ = (xᵢ - x̄), the weighted variance is ∑ᵢ wᵢ²σᵢ². the root of this is the standard error.
+             * Step 1. Calculate the basic summarys statistics for the set of entries we're given.
              */
+            var averages = data.reduce(function (running_summary, datapoint) {
 
-            running_summary[key].stdev += wᵢ * Math.pow(datapoint.description[key] - running_summary[key].avg, 2);
-        });
+                var wᵢ = datapoint.duration / total_duration;
 
-        return running_summary;
-    }, averages);
+                self.keys.forEach(function (key) {
 
-    return finished;
-};
+                    running_summary[key].avg += wᵢ * datapoint.description[key];
+                    running_summary[key].min = Math.min(running_summary[key].min, datapoint.description[key]);
+                    running_summary[key].max = Math.max(running_summary[key].max, datapoint.description[key]);
+                });
 
-/**
- * given some data to reduce to a summary statistic,
- * summarize the data, and pass it to the next element
- * in the pipeline.
- */
-Summary.prototype.source = function (data) {
+                return running_summary;
+            }, self.initial());
 
-    console.log(data);
+            /**
+             * Step 2. Calculate the deviations from the calculated mean.
+             */
+            var finished = data.reduce(function (running_summary, datapoint) {
 
-    this.transformed = [this.summarize(data)];
+                var wᵢ = Math.pow(datapoint.duration / total_duration, 2);
 
-    this.next(this.transformed);
+                self.keys.forEach(function (key) {
+                    /**
+                     * Note that this changes the way the statistical properties of the
+                     * weighted mean is constructed. In particular, since the w_i sum to 1,
+                     * the weighted average no longer needs to be divided by any particular quantity.
+                     *
+                     * The standard deviation of the weighted mean, which is the square root of
+                     * the product of the squares of the variance terms and cooresponding weights,
+                     * should properly be called the standard error of the weighted mean.
+                     *
+                     * Letting σᵢ = (xᵢ - x̄), the weighted variance is ∑ᵢ wᵢ²σᵢ². the root of this is the standard error.
+                     */
 
-    return this;
-};
+                    running_summary[key].stdev += wᵢ * Math.pow(datapoint.description[key] - running_summary[key].avg, 2);
+                });
 
-/**
- * Set the next function in this chain.
- */
-Summary.prototype.sink = function (next) {
+                return running_summary;
+            }, averages);
 
-    this.next = next;
+            return [finished];
+        }
+    }]);
 
-    this.next(this.transformed);
+    return SummaryComponent;
+}(_transform.TransformComponent);
 
-    return this;
-};
+exports.SummaryComponent = SummaryComponent;
 
-exports.Summary = Summary;
+},{"../transform.js":86}],86:[function(require,module,exports){
+'use strict';
 
-},{}],82:[function(require,module,exports){
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.TransformComponent = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
+
+var _component = require('./component.js');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var TransformComponent = function (_Component) {
+    _inherits(TransformComponent, _Component);
+
+    function TransformComponent() {
+        _classCallCheck(this, TransformComponent);
+
+        return _possibleConstructorReturn(this, (TransformComponent.__proto__ || Object.getPrototypeOf(TransformComponent)).call(this));
+    }
+
+    /**
+     * This routine implements a transformation
+     * on the incoming data. this transformation is
+     * called whenever the component is triggered
+     * with new data.
+     */
+
+
+    _createClass(TransformComponent, [{
+        key: 'transform',
+        value: function transform(data) {
+            return data;
+        }
+
+        /**
+         * Override the default triggering behavior to
+         * render the passed data, and then trigger the super
+         */
+
+    }, {
+        key: 'trigger',
+        value: function trigger(data) {
+
+            this.data = this.transform(data);
+
+            return _get(TransformComponent.prototype.__proto__ || Object.getPrototypeOf(TransformComponent.prototype), 'trigger', this).call(this, data);
+        }
+    }]);
+
+    return TransformComponent;
+}(_component.Component);
+
+exports.TransformComponent = TransformComponent;
+
+},{"./component.js":78}],87:[function(require,module,exports){
 'use strict';
 
 var linear = require('./index.js').linear_map;
@@ -31636,7 +32043,7 @@ module.exports = {
     }
 };
 
-},{"./index.js":83}],83:[function(require,module,exports){
+},{"./index.js":88}],88:[function(require,module,exports){
 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -31682,7 +32089,7 @@ module.exports = {
 
 };
 
-},{}],84:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31695,20 +32102,22 @@ function livereload() {
 
 exports.livereload = livereload;
 
-},{}],85:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 'use strict';
 
 var _livereloadClient = require('./livereload-client.js');
 
-var _index = require('./sizing/index.js');
+var _index = require('./components/options-pane/index.js');
 
-var _index2 = require('./components/options-pane/index.js');
+var _index2 = require('./components/group-days/index.js');
 
-var _index3 = require('./components/group-days/index.js');
+var _index3 = require('./components/log/index.js');
 
 var _index4 = require('./components/summary/index.js');
 
 var _index5 = require('./components/normal-plot/index.js');
+
+var _index6 = require('./components/lift/index.js');
 
 var d3 = Object.assign(require('d3'), require('d3-fetch'));
 
@@ -31719,12 +32128,13 @@ var d3 = Object.assign(require('d3'), require('d3-fetch'));
 
 console.log('main.js loaded, from gulp!');
 
-var days = new _index3.GroupDays();
-var summarizeA = new _index4.Summary();
-var normalplotA = new _index5.NormalPlot(document.querySelector('#left-selector'));
-
-var summarizeB = new _index4.Summary();
-var normalplotB = new _index5.NormalPlot(document.querySelector('#right-selector'));
+var days = new _index2.GroupDays();
+var summarize = new _index4.SummaryComponent();
+// var normalplotA = new NormalPlot( document.querySelector('#left-selector') );
+//
+// var summarizeB = new Summary();
+var normalplotA = new _index5.NormalPlot(document.querySelector('#right-selector'));
+var log = new _index3.LogComponent();
 
 // var sizing = new Sizing();
 //
@@ -31751,35 +32161,52 @@ var normalplotB = new _index5.NormalPlot(document.querySelector('#right-selector
 
 //hours.init();
 
+days.init();
+log.init();
+
 normalplotA.init();
-normalplotB.init();
+// normalplotB.init();
 
 d3.json('/api/v1/entries/by-date/12-01-2018/12-11-2018').then(function (res) {
 
     if (res.success) {
 
-        days.source(res.data.entries).sink(function (data) {
+        //console.log( res.data );
 
-            var d_prime = data.map(function (d) {
-                return summarizeA.summarize(d.entries);
-            });
+        days.trigger(res.data.entries).through(new _index6.Lift(function (d) {
+            return d.entries;
+        })).through(new _index6.Lift(summarize.transform.bind(summarize))).through(new _index6.Lift(function (d) {
+            return d[0];
+        })).through(normalplotA);
+        //.through( log );
 
-            normalplotA.source(d_prime.slice(1, 4));
-            normalplotB.source(d_prime.slice(4, 7));
 
-            // summarizeA.source( data[3].entries ).sink( function( d ) {
-            //
-            //     normalplotA.source( d );
-            //
-            // });
-            //
-            // summarizeB.source( data[2].entries ).sink( function( d ) {
-            //
-            //     normalplotB.source( d );
-            //
-            // });
-
-        });
+        // var source = days.source( res.data.entries );
+        //
+        //
+        // days.source( res.data.entries ).sink( function( data ) {
+        //
+        //     var d_prime = data.map( function( d ) {
+        //         return summarizeA.summarize( d.entries );
+        //     });
+        //
+        //     normalplotA.source( d_prime.slice( 1,4 ) );
+        //     normalplotB.source( d_prime.slice( 4,7 ) );
+        //
+        //     // summarizeA.source( data[3].entries ).sink( function( d ) {
+        //     //
+        //     //     normalplotA.source( d );
+        //     //
+        //     // });
+        //     //
+        //     // summarizeB.source( data[2].entries ).sink( function( d ) {
+        //     //
+        //     //     normalplotB.source( d );
+        //     //
+        //     // });
+        //
+        //
+        // });
     } else {
 
         console.error(res);
@@ -31788,34 +32215,4 @@ d3.json('/api/v1/entries/by-date/12-01-2018/12-11-2018').then(function (res) {
     console.error(error);
 });
 
-},{"./components/group-days/index.js":78,"./components/normal-plot/index.js":79,"./components/options-pane/index.js":80,"./components/summary/index.js":81,"./livereload-client.js":84,"./sizing/index.js":86,"d3":38,"d3-fetch":17}],86:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-var EventEmitter = require('events');
-
-/**
- * The sizing module is responsible for tracking
- * changes to the document sizing, recalculating
- * size changes based on external events, and
- * propagating changes to subscribed modules.
- *
- */
-function Sizing() {
-    if (!(this instanceof Sizing)) {
-        return new Sizing();
-    }
-    var self = this;
-
-    self.emitter = new EventEmitter();
-}
-
-Sizing.prototype.recalculate = function () {
-    var self = this;
-};
-
-exports.Sizing = Sizing;
-
-},{"events":39}]},{},[85]);
+},{"./components/group-days/index.js":79,"./components/lift/index.js":80,"./components/log/index.js":81,"./components/normal-plot/index.js":82,"./components/options-pane/index.js":83,"./components/summary/index.js":85,"./livereload-client.js":89,"d3":38,"d3-fetch":17}]},{},[90]);
