@@ -31930,17 +31930,23 @@ var days = new _transformGroupDays.GroupDays();
 var log = new _transformLog.LogComponent();
 var summarize = new _transformSummarize.SummaryComponent();
 
-var normalplotS = new _renderNormalPlot.NormalPlot(document.querySelector('#left-selector'), ['satisfaction']);
-var normalplotP = new _renderNormalPlot.NormalPlot(document.querySelector('#middle-selector'), ['productivity']);
-var normalplotE = new _renderNormalPlot.NormalPlot(document.querySelector('#right-selector'), ['enjoyment']);
+var normalplotS1 = new _renderNormalPlot.NormalPlot(document.querySelector('#left-selector'), ['satisfaction']);
+var normalplotS2 = new _renderNormalPlot.NormalPlot(document.querySelector('#left-selector'), ['satisfaction']);
+var normalplotP1 = new _renderNormalPlot.NormalPlot(document.querySelector('#middle-selector'), ['productivity']);
+var normalplotP2 = new _renderNormalPlot.NormalPlot(document.querySelector('#middle-selector'), ['productivity']);
+var normalplotE1 = new _renderNormalPlot.NormalPlot(document.querySelector('#right-selector'), ['enjoyment']);
+var normalplotE2 = new _renderNormalPlot.NormalPlot(document.querySelector('#right-selector'), ['enjoyment']);
 
 days.init();
 log.init();
 summarize.init();
 
-normalplotS.init();
-normalplotP.init();
-normalplotE.init();
+normalplotS1.init();
+normalplotS2.init();
+normalplotP1.init();
+normalplotP2.init();
+normalplotE1.init();
+normalplotE2.init();
 
 d3.json('/api/v1/entries/by-date/12-01-2018/12-11-2018').then(function (res) {
 
@@ -31952,11 +31958,27 @@ d3.json('/api/v1/entries/by-date/12-01-2018/12-11-2018').then(function (res) {
                         return d[0];
                 })).through(new _transformLog.LogComponent('Pipeline Root'));
 
-                pipeline.through(new _transformLog.LogComponent('Path A')).through(normalplotS);
+                pipeline.through(new _transformAll.All(function (d) {
+                        return d.slice(0, 4);
+                })).through(new _transformLog.LogComponent('Path S₁')).through(normalplotS1);
 
-                pipeline.through(new _transformLog.LogComponent('Path B')).through(normalplotP);
+                pipeline.through(new _transformAll.All(function (d) {
+                        return d.slice(4, 8);
+                })).through(new _transformLog.LogComponent('Path S₂')).through(normalplotS2);
 
-                pipeline.through(new _transformLog.LogComponent('Path B')).through(normalplotE);
+                pipeline.through(new _transformAll.All(function (d) {
+                        return d.slice(0, 4);
+                })).through(new _transformLog.LogComponent('Path P')).through(normalplotP1);
+                pipeline.through(new _transformAll.All(function (d) {
+                        return d.slice(4, 8);
+                })).through(new _transformLog.LogComponent('Path P')).through(normalplotP2);
+
+                pipeline.through(new _transformAll.All(function (d) {
+                        return d.slice(0, 4);
+                })).through(new _transformLog.LogComponent('Path E')).through(normalplotE1);
+                pipeline.through(new _transformAll.All(function (d) {
+                        return d.slice(4, 8);
+                })).through(new _transformLog.LogComponent('Path E')).through(normalplotE2);
 
                 pipeline.run(res.data.entries);
         } else {

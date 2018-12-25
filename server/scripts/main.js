@@ -23,17 +23,23 @@ var days = new GroupDays( );
 var log = new LogComponent();
 var summarize = new SummaryComponent();
 
-var normalplotS = new NormalPlot( document.querySelector('#left-selector'), ['satisfaction'] );
-var normalplotP = new NormalPlot( document.querySelector('#middle-selector'), ['productivity'] );
-var normalplotE = new NormalPlot( document.querySelector('#right-selector'), ['enjoyment'] );
+var normalplotS1 = new NormalPlot( document.querySelector('#left-selector'), ['satisfaction'] );
+var normalplotS2 = new NormalPlot( document.querySelector('#left-selector'), ['satisfaction'] );
+var normalplotP1 = new NormalPlot( document.querySelector('#middle-selector'), ['productivity'] );
+var normalplotP2 = new NormalPlot( document.querySelector('#middle-selector'), ['productivity'] );
+var normalplotE1 = new NormalPlot( document.querySelector('#right-selector'), ['enjoyment'] );
+var normalplotE2 = new NormalPlot( document.querySelector('#right-selector'), ['enjoyment'] );
 
 days.init();
 log.init();
 summarize.init();
 
-normalplotS.init();
-normalplotP.init();
-normalplotE.init();
+normalplotS1.init();
+normalplotS2.init();
+normalplotP1.init();
+normalplotP2.init();
+normalplotE1.init();
+normalplotE2.init();
 
 d3  .json('/api/v1/entries/by-date/12-01-2018/12-11-2018')
     .then( function( res ) {
@@ -47,16 +53,32 @@ d3  .json('/api/v1/entries/by-date/12-01-2018/12-11-2018')
                     .through( new LogComponent('Pipeline Root') );
 
             pipeline
-                    .through( new LogComponent('Path A') )
-                    .through( normalplotS );
+                    .through( new All( function(d) { return d.slice( 0,4 ); }))
+                    .through( new LogComponent('Path S₁') )
+                    .through( normalplotS1 );
 
             pipeline
-                    .through( new LogComponent('Path B') )
-                    .through( normalplotP );
+                    .through( new All( function(d) { return d.slice( 4,8 ); }))
+                    .through( new LogComponent('Path S₂') )
+                    .through( normalplotS2 );
 
             pipeline
-                    .through( new LogComponent('Path B') )
-                    .through( normalplotE );
+                    .through( new All( function(d) { return d.slice( 0,4 ); }))
+                    .through( new LogComponent('Path P') )
+                    .through( normalplotP1 );
+            pipeline
+                    .through( new All( function(d) { return d.slice( 4,8 ); }))
+                    .through( new LogComponent('Path P') )
+                    .through( normalplotP2 );
+
+            pipeline
+                    .through( new All( function(d) { return d.slice( 0,4 ); }))
+                    .through( new LogComponent('Path E') )
+                    .through( normalplotE1 );
+            pipeline
+                    .through( new All( function(d) { return d.slice( 4,8 ); }))
+                    .through( new LogComponent('Path E') )
+                    .through( normalplotE2 );
 
             pipeline.run( res.data.entries );
 
