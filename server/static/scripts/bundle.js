@@ -31014,8 +31014,8 @@ var Component = function () {
         _classCallCheck(this, Component);
 
         this.prefix = 'id-' + uuid.v4();
-        this.data = [];
         this.downstream = {};
+        this.parent = null;
     }
 
     /**
@@ -31031,6 +31031,38 @@ var Component = function () {
         }
 
         /**
+         * This is an unimplemented method that should be overridden
+         * by subclasses. It is responsible for implementing all of
+         * the functionality required by this component.
+         */
+
+    }, {
+        key: 'transform',
+        value: function transform(data) {
+            return data;
+        }
+
+        /**
+         * Run this pipeline that this component is part of
+         * from the top. Calling this method on any component in
+         * pipeline will pass the supplied data to the top of the
+         * chain, and then begin processing from the top.
+         */
+
+    }, {
+        key: 'run',
+        value: function run(data) {
+
+            if (this.parent !== null) {
+                this.parent.run(data);
+            } else {
+                this.trigger(data);
+            }
+
+            return this;
+        }
+
+        /**
          * The source routine assigns a set of
          * data to this component, and propagates
          * changed data to downstream components.
@@ -31039,6 +31071,8 @@ var Component = function () {
     }, {
         key: 'trigger',
         value: function trigger(data) {
+
+            data = this.transform(data);
 
             for (var id in this.downstream) {
                 if (this.downstream.hasOwnProperty(id)) {
@@ -31064,9 +31098,13 @@ var Component = function () {
                 throw new Error('ComponentError: tried to add a component as a downstream of itelf.');
             }
 
-            this.downstream[component.prefix] = component;
+            if (component.parent !== null) {
+                throw new Error('ComponentError: You\'re piping data from "' + this.constructor.name + '" through "' + component.constructor.name + '" that already has a parent: "' + component.parent.constructor.name + '". Standard Data Streams must be have a tree-like structure.');
+            }
 
-            component.trigger(this.data);
+            component.parent = this;
+
+            this.downstream[component.prefix] = component;
 
             return component;
         }
@@ -31082,6 +31120,7 @@ var Component = function () {
         value: function remove(component) {
 
             if (typeof this.downstream[component.prefix] !== 'undefined') {
+                this.downstream[component.prefix].parent = null;
                 delete this.downstream[component.prefix];
             }
 
@@ -31100,194 +31139,11 @@ exports.Component = Component;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.GroupDays = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _transform = require('../transform.js');
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var moment = require('moment');
-var partitionBy = require('../utilities/index.js').partition_by;
-
-/**
- * A simple comparator for sorting day entries
- * by date time using string comparison.
- */
-function byDatetime(a, b) {
-
-    var a_date = moment(a.day.split(' - ')[1], 'MM/DD/YYYY');
-    var b_date = moment(b.day.split(' - ')[1], 'MM/DD/YYYY');
-
-    return b_date.isAfter(a_date) ? -1 : b_date.isBefore(a_date) ? 1 : 0;
-}
-
-var GroupDays = function (_TransformComponent) {
-    _inherits(GroupDays, _TransformComponent);
-
-    /**
-     * This constructor takes a single parameter, indicating
-     * whether or not to sort the output by datetime.
-     * defaults to sorted output. Pass false to leave unsorted.
-     */
-    function GroupDays() {
-        var sorted = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-
-        _classCallCheck(this, GroupDays);
-
-        var _this = _possibleConstructorReturn(this, (GroupDays.__proto__ || Object.getPrototypeOf(GroupDays)).call(this));
-
-        _this.sorted = sorted;
-        return _this;
-    }
-
-    /**
-     * This transform routine implements a simple routine
-     * for grouping a set of entries by the day they occurred on.
-     */
-
-
-    _createClass(GroupDays, [{
-        key: 'transform',
-        value: function transform(data) {
-
-            data = partitionBy(function (object) {
-                return moment(object.start_time).format('dddd - MM/DD/YYYY');
-            }, data).map(function (day) {
-
-                var date = day.day.split(' - ');
-
-                day.date = date[1];
-                day.day = date[0];
-
-                return day;
-            });
-
-            if (this.sorted) {
-                data.sort(byDatetime);
-            }
-
-            return data;
-        }
-    }]);
-
-    return GroupDays;
-}(_transform.TransformComponent);
-
-exports.GroupDays = GroupDays;
-
-},{"../transform.js":86,"../utilities/index.js":88,"moment":45}],80:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.Lift = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _transform = require('../transform.js');
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var Lift = function (_TransformComponent) {
-    _inherits(Lift, _TransformComponent);
-
-    function Lift(f) {
-        _classCallCheck(this, Lift);
-
-        var _this = _possibleConstructorReturn(this, (Lift.__proto__ || Object.getPrototypeOf(Lift)).call(this));
-
-        _this.f = f;
-        return _this;
-    }
-
-    /**
-     * This dead-simple component just logs the data
-     * passing through it to the console.
-     */
-
-
-    _createClass(Lift, [{
-        key: 'transform',
-        value: function transform(data) {
-            return data.map(this.f);
-        }
-    }]);
-
-    return Lift;
-}(_transform.TransformComponent);
-
-exports.Lift = Lift;
-
-},{"../transform.js":86}],81:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.LogComponent = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _transform = require('../transform.js');
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var LogComponent = function (_TransformComponent) {
-    _inherits(LogComponent, _TransformComponent);
-
-    function LogComponent() {
-        _classCallCheck(this, LogComponent);
-
-        return _possibleConstructorReturn(this, (LogComponent.__proto__ || Object.getPrototypeOf(LogComponent)).call(this));
-    }
-
-    /**
-     * This dead-simple component just logs the data
-     * passing through it to the console.
-     */
-
-
-    _createClass(LogComponent, [{
-        key: 'transform',
-        value: function transform(data) {
-
-            console.log(data);
-
-            return data;
-        }
-    }]);
-
-    return LogComponent;
-}(_transform.TransformComponent);
-
-exports.LogComponent = LogComponent;
-
-},{"../transform.js":86}],82:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
 exports.NormalPlot = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _render = require('../render.js');
+var _abstractComponent = require('./abstract-component.js');
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -31295,21 +31151,24 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var uuid = require('uuid');
 var d3 = Object.assign(require('d3'), require('d3-fetch'));
-var linear = require('../utilities/index.js').linear_map;
-var colors = require('../utilities/color.js');
+var linear = require('./utilities/index.js').linear_map;
+var colors = require('./utilities/color.js');
 
-var NormalPlot = function (_RenderComponent) {
-    _inherits(NormalPlot, _RenderComponent);
+var NormalPlot = function (_Component) {
+    _inherits(NormalPlot, _Component);
 
     /**
      *
      */
     function NormalPlot(element) {
+        var keys = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : ['satisfaction', 'productivity', 'enjoyment'];
+
         _classCallCheck(this, NormalPlot);
 
-        var _this = _possibleConstructorReturn(this, (NormalPlot.__proto__ || Object.getPrototypeOf(NormalPlot)).call(this, element));
+        var _this = _possibleConstructorReturn(this, (NormalPlot.__proto__ || Object.getPrototypeOf(NormalPlot)).call(this));
+
+        _this.element = element;
 
         _this.viewBox = {
             x: 0,
@@ -31326,7 +31185,7 @@ var NormalPlot = function (_RenderComponent) {
         _this.static = {};
         _this.dynamic = {};
 
-        _this.keys = ['satisfaction', 'productivity', 'enjoyment'];
+        _this.keys = keys;
 
         return _this;
     }
@@ -31508,9 +31367,8 @@ var NormalPlot = function (_RenderComponent) {
          */
 
     }, {
-        key: 'render',
-        value: function render(data) {
-            console.log(data);
+        key: 'transform',
+        value: function transform(data) {
 
             var self = this;
 
@@ -31556,198 +31414,27 @@ var NormalPlot = function (_RenderComponent) {
             });
 
             self.container.classed('normal-plot-loading', false);
+
+            return data;
         }
     }]);
 
     return NormalPlot;
-}(_render.RenderComponent);
+}(_abstractComponent.Component);
 
 exports.NormalPlot = NormalPlot;
 
-},{"../render.js":84,"../utilities/color.js":87,"../utilities/index.js":88,"d3":38,"d3-fetch":17,"uuid":71}],83:[function(require,module,exports){
+},{"./abstract-component.js":78,"./utilities/color.js":85,"./utilities/index.js":86,"d3":38,"d3-fetch":17}],80:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-var d3 = Object.assign(require('d3'), require('d3-fetch'));
-var uuid = require('uuid');
-
-function OptionsPane(element) {
-    if (!(this instanceof OptionsPane)) {
-        return new OptionsPane(element);
-    }
-    var self = this;
-
-    self.element = element;
-    self.options = [];
-    self.prefix = 'id-' + uuid.v4();
-    self.next = function () {};
-}
-
-OptionsPane.prototype.makeSelectElement = function () {
-    var self = this;
-
-    var selectElement = d3.select(self.element).append('div').classed('select-frame', true);
-
-    selectElement.append('ul').attr('id', self.prefix + '-selected-options').classed('selected-options', true);
-
-    selectElement.append('ul').attr('id', self.prefix + '-select-options').classed('select-options', true).classed('select-options-loading', true);
-
-    return selectElement;
-};
-
-/**
- * Initialize the options pane by creating an
- * the required elements. Does not actually
- * render the supplied values,
- */
-OptionsPane.prototype.init = function () {
-
-    var self = this;
-
-    self.makeSelectElement();
-
-    self.selectOptions = d3.select('#' + self.prefix + '-select-options');
-
-    self.activeOptions = d3.select('#' + self.prefix + '-selected-options');
-
-    return self;
-};
-
-OptionsPane.prototype.matchActiveOptionsToData = function (data) {
-
-    var self = this;
-
-    if (self.options.length > 0) {
-
-        self.options = self.options.filter(function (option) {
-
-            for (var i in data) {
-                if (data[i].id === option.id) {
-                    return true;
-                }
-            }
-
-            return false;
-        });
-    }
-
-    console.log(self.options);
-
-    self.renderActiveOptions();
-};
-
-/**
- * This routine sets the datasource for a given selection renderer,
- * and renders the options-list to the page. This function can be
- * called at any time to update the set of data representing the available options.
- *
- * NOTE: a singe options pane may only have a SINGLE source.
- *
- * @param array data an array containing options objects to render.
- *                   options objects must contain at least a unique id and a name.
- *
- */
-OptionsPane.prototype.source = function (data) {
-
-    var self = this;
-
-    self.matchActiveOptionsToData(data);
-
-    var options = self.selectOptions.classed('select-options-loading', false).classed('select-options-loaded', true).selectAll('.option').data(data, function (d) {
-        return d.id;
-    });
-
-    var lis = options.enter().append('li').classed('option', true).classed('option-row', true).attr('id', function (d) {
-        return self.prefix + '-option-' + d.id;
-    }).attr('data-option-id', function (d) {
-        return d.id;
-    }).attr('value', function (d) {
-        return d.id;
-    }).on('click', function (d) {
-
-        d3.select(this).classed('active', true);
-        self.options.push(d);
-        self.renderActiveOptions();
-    });
-
-    lis.append('p').text(function (d) {
-        return d.name;
-    });
-
-    options.exit().remove();
-
-    return self;
-};
-
-/**
- * Specify a function that's called whenever the set of
- * active options changes.
- *
- * NOTE: a singe options pane may only have a SINGLE sink.
- */
-OptionsPane.prototype.sink = function (nextStep) {
-
-    var self = this;
-
-    self.next = nextStep;
-
-    return self;
-};
-
-/**
- * This routine updates the active options associated with
- * this select box. Active options appear at the top of
- * the select window in an active options list, and appear
- * marked with the .active class in the list of options.
- */
-OptionsPane.prototype.renderActiveOptions = function () {
-    var self = this;
-
-    var activeOptions = self.activeOptions.selectAll('.selected-option').data(self.options, function (d) {
-        return d.id;
-    });
-
-    var lis = activeOptions.enter().append('li').classed('selected-option', true).classed('option-row', true).attr('id', function (d) {
-        return self.prefix + 'active-option-' + d.id;
-    }).attr('data-option-id', function (d) {
-        return d.id;
-    }).attr('value', function (d) {
-        return d.id;
-    }).on('click', function (d) {
-
-        d3.select('#' + self.prefix + '-option-' + d.id).classed('active', false);
-        self.options = self.options.filter(function (option) {
-            return option.id !== d.id;
-        });
-        self.renderActiveOptions();
-    });
-
-    lis.append('p').text(function (d) {
-        return d.name;
-    }).append('span').classed('option-remove-button', true).classed('pictogram', true).text('X');
-
-    activeOptions.exit().remove();
-
-    self.next(self.options);
-};
-
-exports.OptionsPane = OptionsPane;
-
-},{"d3":38,"d3-fetch":17,"uuid":71}],84:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.RenderComponent = undefined;
+exports.All = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
-
-var _component = require('./component.js');
+var _abstractComponent = require('./abstract-component.js');
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -31755,57 +31442,229 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var RenderComponent = function (_Component) {
-  _inherits(RenderComponent, _Component);
+var All = function (_Component) {
+    _inherits(All, _Component);
 
-  /**
-   * RenderComponents require a DOMElement to
-   * attatch their visualization or interface
-   * logic to.
-   */
-  function RenderComponent(element) {
-    _classCallCheck(this, RenderComponent);
+    function All(f) {
+        _classCallCheck(this, All);
 
-    var _this = _possibleConstructorReturn(this, (RenderComponent.__proto__ || Object.getPrototypeOf(RenderComponent)).call(this));
+        var _this = _possibleConstructorReturn(this, (All.__proto__ || Object.getPrototypeOf(All)).call(this));
 
-    _this.element = element;
-
-    return _this;
-  }
-
-  /**
-   * This routine implements a rendering procedure
-   * for drawing the supplied data to the
-   */
-
-
-  _createClass(RenderComponent, [{
-    key: 'render',
-    value: function render(data) {
-      return this;
+        _this.f = f;
+        return _this;
     }
 
     /**
-     * Override the default triggering behavior to
-     * render the passed data, and then trigger the super
+     * This dead-simple component just logs the data
+     * passing through it to the console.
      */
 
-  }, {
-    key: 'trigger',
-    value: function trigger(data) {
 
-      this.data = this.render(data);
+    _createClass(All, [{
+        key: 'transform',
+        value: function transform(data) {
+            return this.f(data);
+        }
+    }]);
 
-      return _get(RenderComponent.prototype.__proto__ || Object.getPrototypeOf(RenderComponent.prototype), 'trigger', this).call(this, data);
+    return All;
+}(_abstractComponent.Component);
+
+exports.All = All;
+
+},{"./abstract-component.js":78}],81:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.Each = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _abstractComponent = require('./abstract-component.js');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var Each = function (_Component) {
+    _inherits(Each, _Component);
+
+    function Each(f) {
+        _classCallCheck(this, Each);
+
+        var _this = _possibleConstructorReturn(this, (Each.__proto__ || Object.getPrototypeOf(Each)).call(this));
+
+        _this.f = f;
+        return _this;
     }
-  }]);
 
-  return RenderComponent;
-}(_component.Component);
+    /**
+     * This dead-simple component just logs the data
+     * passing through it to the console.
+     */
 
-exports.RenderComponent = RenderComponent;
 
-},{"./component.js":78}],85:[function(require,module,exports){
+    _createClass(Each, [{
+        key: 'transform',
+        value: function transform(data) {
+            return data.map(this.f);
+        }
+    }]);
+
+    return Each;
+}(_abstractComponent.Component);
+
+exports.Each = Each;
+
+},{"./abstract-component.js":78}],82:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.GroupDays = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _abstractComponent = require('./abstract-component.js');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var moment = require('moment');
+var partitionBy = require('./utilities/index.js').partition_by;
+
+/**
+ * A simple comparator for sorting day entries
+ * by date time using string comparison.
+ */
+function byDatetime(a, b) {
+
+    var a_date = moment(a.day.split(' - ')[1], 'MM/DD/YYYY');
+    var b_date = moment(b.day.split(' - ')[1], 'MM/DD/YYYY');
+
+    return b_date.isAfter(a_date) ? -1 : b_date.isBefore(a_date) ? 1 : 0;
+}
+
+var GroupDays = function (_Component) {
+    _inherits(GroupDays, _Component);
+
+    /**
+     * This constructor takes a single parameter, indicating
+     * whether or not to sort the output by datetime.
+     * defaults to sorted output. Pass false to leave unsorted.
+     */
+    function GroupDays() {
+        var sorted = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+        _classCallCheck(this, GroupDays);
+
+        var _this = _possibleConstructorReturn(this, (GroupDays.__proto__ || Object.getPrototypeOf(GroupDays)).call(this));
+
+        _this.sorted = sorted;
+        return _this;
+    }
+
+    /**
+     * This transform routine implements a simple routine
+     * for grouping a set of entries by the day they occurred on.
+     */
+
+
+    _createClass(GroupDays, [{
+        key: 'transform',
+        value: function transform(data) {
+
+            data = partitionBy(function (object) {
+                return moment(object.start_time).format('dddd - MM/DD/YYYY');
+            }, data).map(function (day) {
+
+                var date = day.day.split(' - ');
+
+                day.date = date[1];
+                day.day = date[0];
+
+                return day;
+            });
+
+            if (this.sorted) {
+                data.sort(byDatetime);
+            }
+
+            return data;
+        }
+    }]);
+
+    return GroupDays;
+}(_abstractComponent.Component);
+
+exports.GroupDays = GroupDays;
+
+},{"./abstract-component.js":78,"./utilities/index.js":86,"moment":45}],83:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.LogComponent = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _abstractComponent = require('./abstract-component.js');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var LogComponent = function (_Component) {
+    _inherits(LogComponent, _Component);
+
+    function LogComponent() {
+        var prefix = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+        _classCallCheck(this, LogComponent);
+
+        var _this = _possibleConstructorReturn(this, (LogComponent.__proto__ || Object.getPrototypeOf(LogComponent)).call(this));
+
+        _this.logPrefix = prefix;
+        return _this;
+    }
+
+    /**
+     * This dead-simple component just logs the data
+     * passing through it to the console.
+     */
+
+
+    _createClass(LogComponent, [{
+        key: 'transform',
+        value: function transform(data) {
+
+            if (this.logPrefix !== null) {
+                console.log(this.logPrefix + ': ', data);
+            } else {
+                console.log(data);
+            }
+
+            return data;
+        }
+    }]);
+
+    return LogComponent;
+}(_abstractComponent.Component);
+
+exports.LogComponent = LogComponent;
+
+},{"./abstract-component.js":78}],84:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31815,7 +31674,7 @@ exports.SummaryComponent = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _transform = require('../transform.js');
+var _abstractComponent = require('./abstract-component.js');
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -31823,15 +31682,17 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var SummaryComponent = function (_TransformComponent) {
-    _inherits(SummaryComponent, _TransformComponent);
+var SummaryComponent = function (_Component) {
+    _inherits(SummaryComponent, _Component);
 
     function SummaryComponent() {
+        var keys = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : ['satisfaction', 'productivity', 'enjoyment'];
+
         _classCallCheck(this, SummaryComponent);
 
         var _this = _possibleConstructorReturn(this, (SummaryComponent.__proto__ || Object.getPrototypeOf(SummaryComponent)).call(this));
 
-        _this.keys = ['satisfaction', 'productivity', 'enjoyment'];
+        _this.keys = keys;
         return _this;
     }
 
@@ -31908,74 +31769,11 @@ var SummaryComponent = function (_TransformComponent) {
     }]);
 
     return SummaryComponent;
-}(_transform.TransformComponent);
+}(_abstractComponent.Component);
 
 exports.SummaryComponent = SummaryComponent;
 
-},{"../transform.js":86}],86:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.TransformComponent = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
-
-var _component = require('./component.js');
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var TransformComponent = function (_Component) {
-    _inherits(TransformComponent, _Component);
-
-    function TransformComponent() {
-        _classCallCheck(this, TransformComponent);
-
-        return _possibleConstructorReturn(this, (TransformComponent.__proto__ || Object.getPrototypeOf(TransformComponent)).call(this));
-    }
-
-    /**
-     * This routine implements a transformation
-     * on the incoming data. this transformation is
-     * called whenever the component is triggered
-     * with new data.
-     */
-
-
-    _createClass(TransformComponent, [{
-        key: 'transform',
-        value: function transform(data) {
-            return data;
-        }
-
-        /**
-         * Override the default triggering behavior to
-         * render the passed data, and then trigger the super
-         */
-
-    }, {
-        key: 'trigger',
-        value: function trigger(data) {
-
-            this.data = this.transform(data);
-
-            return _get(TransformComponent.prototype.__proto__ || Object.getPrototypeOf(TransformComponent.prototype), 'trigger', this).call(this, data);
-        }
-    }]);
-
-    return TransformComponent;
-}(_component.Component);
-
-exports.TransformComponent = TransformComponent;
-
-},{"./component.js":78}],87:[function(require,module,exports){
+},{"./abstract-component.js":78}],85:[function(require,module,exports){
 'use strict';
 
 var linear = require('./index.js').linear_map;
@@ -32043,7 +31841,7 @@ module.exports = {
     }
 };
 
-},{"./index.js":88}],88:[function(require,module,exports){
+},{"./index.js":86}],86:[function(require,module,exports){
 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -32089,7 +31887,7 @@ module.exports = {
 
 };
 
-},{}],89:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -32102,117 +31900,70 @@ function livereload() {
 
 exports.livereload = livereload;
 
-},{}],90:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 'use strict';
 
 var _livereloadClient = require('./livereload-client.js');
 
-var _index = require('./components/options-pane/index.js');
+var _transformGroupDays = require('./components/transform-group-days.js');
 
-var _index2 = require('./components/group-days/index.js');
+var _transformLog = require('./components/transform-log.js');
 
-var _index3 = require('./components/log/index.js');
+var _transformSummarize = require('./components/transform-summarize.js');
 
-var _index4 = require('./components/summary/index.js');
+var _transformEach = require('./components/transform-each.js');
 
-var _index5 = require('./components/normal-plot/index.js');
+var _transformAll = require('./components/transform-all.js');
 
-var _index6 = require('./components/lift/index.js');
+var _renderNormalPlot = require('./components/render-normal-plot.js');
 
 var d3 = Object.assign(require('d3'), require('d3-fetch'));
 
-// import { WeekSummaries } from './components/week-summary/index.js';
-// import { HourSummaries } from './components/hours-summary/index.js';
+//import { OptionsPane } from './components/render-options-pane.js';
+
 
 (0, _livereloadClient.livereload)();
 
 console.log('main.js loaded, from gulp!');
 
-var days = new _index2.GroupDays();
-var summarize = new _index4.SummaryComponent();
-// var normalplotA = new NormalPlot( document.querySelector('#left-selector') );
-//
-// var summarizeB = new Summary();
-var normalplotA = new _index5.NormalPlot(document.querySelector('#right-selector'));
-var log = new _index3.LogComponent();
+var days = new _transformGroupDays.GroupDays();
+var log = new _transformLog.LogComponent();
+var summarize = new _transformSummarize.SummaryComponent();
 
-// var sizing = new Sizing();
-//
-// var optionsA = OptionsPane( document.querySelector('#left-selector') );
-// var optionsB = OptionsPane( document.querySelector('#right-selector') );
-//
-// // var weeks = WeekSummaries( document.querySelector('#main') );
-// //
-// // var hours = HourSummaries( document.querySelector('#main') );
-//
-// optionsA.init( sizing );
-// optionsB.init( sizing );
-//
-// d3  .json( '/api/v1/projects' )
-//     .then( function( res ) {
-//
-//         optionsA.source( res.data.projects );
-//
-//     });
-//
-// optionsA.sink( function( data ) {
-//     optionsB.source( data );
-// });
-
-//hours.init();
+var normalplotS = new _renderNormalPlot.NormalPlot(document.querySelector('#left-selector'), ['satisfaction']);
+var normalplotP = new _renderNormalPlot.NormalPlot(document.querySelector('#middle-selector'), ['productivity']);
+var normalplotE = new _renderNormalPlot.NormalPlot(document.querySelector('#right-selector'), ['enjoyment']);
 
 days.init();
 log.init();
+summarize.init();
 
-normalplotA.init();
-// normalplotB.init();
+normalplotS.init();
+normalplotP.init();
+normalplotE.init();
 
 d3.json('/api/v1/entries/by-date/12-01-2018/12-11-2018').then(function (res) {
 
-    if (res.success) {
+        if (res.success) {
 
-        //console.log( res.data );
+                var pipeline = days.through(new _transformEach.Each(function (d) {
+                        return d.entries;
+                })).through(new _transformEach.Each(summarize.transform.bind(summarize))).through(new _transformEach.Each(function (d) {
+                        return d[0];
+                })).through(new _transformLog.LogComponent('Pipeline Root'));
 
-        days.trigger(res.data.entries).through(new _index6.Lift(function (d) {
-            return d.entries;
-        })).through(new _index6.Lift(summarize.transform.bind(summarize))).through(new _index6.Lift(function (d) {
-            return d[0];
-        })).through(normalplotA);
-        //.through( log );
+                pipeline.through(new _transformLog.LogComponent('Path A')).through(normalplotS);
 
+                pipeline.through(new _transformLog.LogComponent('Path B')).through(normalplotP);
 
-        // var source = days.source( res.data.entries );
-        //
-        //
-        // days.source( res.data.entries ).sink( function( data ) {
-        //
-        //     var d_prime = data.map( function( d ) {
-        //         return summarizeA.summarize( d.entries );
-        //     });
-        //
-        //     normalplotA.source( d_prime.slice( 1,4 ) );
-        //     normalplotB.source( d_prime.slice( 4,7 ) );
-        //
-        //     // summarizeA.source( data[3].entries ).sink( function( d ) {
-        //     //
-        //     //     normalplotA.source( d );
-        //     //
-        //     // });
-        //     //
-        //     // summarizeB.source( data[2].entries ).sink( function( d ) {
-        //     //
-        //     //     normalplotB.source( d );
-        //     //
-        //     // });
-        //
-        //
-        // });
-    } else {
+                pipeline.through(new _transformLog.LogComponent('Path B')).through(normalplotE);
 
-        console.error(res);
-    }
+                pipeline.run(res.data.entries);
+        } else {
+                console.error(res);
+        }
 }).catch(function (error) {
-    console.error(error);
+        console.error(error);
 });
 
-},{"./components/group-days/index.js":79,"./components/lift/index.js":80,"./components/log/index.js":81,"./components/normal-plot/index.js":82,"./components/options-pane/index.js":83,"./components/summary/index.js":85,"./livereload-client.js":89,"d3":38,"d3-fetch":17}]},{},[90]);
+},{"./components/render-normal-plot.js":79,"./components/transform-all.js":80,"./components/transform-each.js":81,"./components/transform-group-days.js":82,"./components/transform-log.js":83,"./components/transform-summarize.js":84,"./livereload-client.js":87,"d3":38,"d3-fetch":17}]},{},[88]);
