@@ -1,21 +1,22 @@
 'use strict';
 
-import { RenderComponent } from '../render.js';
+import { Component } from './abstract-component.js';
 
-var uuid = require('uuid');
 var d3 = Object.assign( require('d3'), require('d3-fetch') );
-var linear = require('../utilities/index.js').linear_map;
-var colors = require('../utilities/color.js');
+var linear = require('./utilities/index.js').linear_map;
+var colors = require('./utilities/color.js');
 
 
 
-class NormalPlot extends RenderComponent {
+class NormalPlot extends Component {
 
     /**
      *
      */
-    constructor( element ) {
-        super( element );
+    constructor( element, keys = ['satisfaction','productivity','enjoyment'] ) {
+        super();
+
+        this.element = element;
 
         this.viewBox = {
             x: 0,
@@ -32,7 +33,7 @@ class NormalPlot extends RenderComponent {
         this.static = {};
         this.dynamic = {};
 
-        this.keys = ['satisfaction','productivity','enjoyment'];
+        this.keys = keys;
 
     }
 
@@ -242,8 +243,7 @@ class NormalPlot extends RenderComponent {
      * Override the parents rendering routine to
      * to implement our baseline rendering.
      */
-    render( data ) {
-        console.log( data );
+    transform( data ) {
 
         var self = this;
 
@@ -298,6 +298,8 @@ class NormalPlot extends RenderComponent {
         });
 
         self.container.classed('normal-plot-loading', false );
+
+        return data;
     }
 
 }

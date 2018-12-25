@@ -1,9 +1,9 @@
 'use strict';
 
 var moment = require('moment');
-var partitionBy = require('../utilities/index.js').partition_by;
+var partitionBy = require('./utilities/index.js').partition_by;
 
-import { TransformComponent } from '../transform.js';
+import { Component } from './abstract-component.js';
 
 /**
  * A simple comparator for sorting day entries
@@ -20,7 +20,7 @@ function byDatetime( a, b ) {
 
 
 
-class GroupDays extends TransformComponent {
+class GroupDays extends Component {
 
     /**
      * This constructor takes a single parameter, indicating

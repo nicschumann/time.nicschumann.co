@@ -1,12 +1,13 @@
 'use strict';
 
-import { TransformComponent } from '../transform.js';
+import { Component } from './abstract-component.js';
 
-class SummaryComponent extends TransformComponent {
 
-    constructor() {
+class SummaryComponent extends Component {
+
+    constructor( keys = ['satisfaction', 'productivity', 'enjoyment'] ) {
         super();
-        this.keys = ['satisfaction', 'productivity', 'enjoyment'];
+        this.keys = keys;
     }
 
     /**

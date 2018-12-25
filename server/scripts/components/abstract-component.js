@@ -23,11 +23,11 @@ class Component {
      *
      *
      */
-    constructor() {
+    constructor( ) {
 
         this.prefix = 'id-' + uuid.v4();
-        this.data = [];
         this.downstream = {};
+        this.parent = null;
 
     }
 
@@ -38,11 +38,39 @@ class Component {
     init() { return this; }
 
     /**
+     * This is an unimplemented method that should be overridden
+     * by subclasses. It is responsible for implementing all of
+     * the functionality required by this component.
+     */
+    transform( data ) { return data; }
+
+    /**
+     * Run this pipeline that this component is part of
+     * from the top. Calling this method on any component in
+     * pipeline will pass the supplied data to the top of the
+     * chain, and then begin processing from the top.
+     */
+    run( data ) {
+
+        if ( this.parent !== null ) {
+            this.parent.run( data );
+        } else {
+            this.trigger( data );
+        }
+
+        return this;
+
+    }
+
+    /**
      * The source routine assigns a set of
      * data to this component, and propagates
      * changed data to downstream components.
      */
     trigger( data ) {
+
+
+        data = this.transform( data );
 
         for ( var id in this.downstream ) {
             if ( this.downstream.hasOwnProperty( id ) ) {
@@ -64,9 +92,11 @@ class Component {
 
         if ( component.prefix === this.prefix ) { throw new Error('ComponentError: tried to add a component as a downstream of itelf.'); }
 
-        this.downstream[ component.prefix ] = component;
+        if ( component.parent !== null ) { throw new Error(`ComponentError: You're piping data from "${this.constructor.name}" through "${component.constructor.name}" that already has a parent: "${component.parent.constructor.name}". Standard Data Streams must be have a tree-like structure.`);}
 
-        component.trigger( this.data );
+        component.parent = this;
+
+        this.downstream[ component.prefix ] = component;
 
         return component;
 
@@ -80,12 +110,15 @@ class Component {
     remove( component ) {
 
         if ( typeof this.downstream[ component.prefix ] !== 'undefined') {
+            this.downstream[ component.prefix ].parent = null;
             delete this.downstream[ component.prefix ];
         }
 
         return this;
 
     }
+
+
 
 }
 

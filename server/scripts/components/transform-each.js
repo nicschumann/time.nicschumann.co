@@ -1,9 +1,9 @@
 'use strict';
 
-import { TransformComponent } from '../transform.js';
+import { Component } from './abstract-component.js';
 
 
-class Lift extends TransformComponent {
+class Each extends Component {
 
     constructor( f ) {
         super();
@@ -18,4 +18,4 @@ class Lift extends TransformComponent {
 
 }
 
-export { Lift };
+export { Each };
